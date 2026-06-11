@@ -1,0 +1,53 @@
+{
+  "common": {
+    "search": "Search",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "profile": "Profile",
+    "settings": "Settings",
+    "dashboard": "Dashboard",
+    "discover": "Discover",
+    "library": "Library",
+    "player": "Player"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "listening_stats": "Listening Stats",
+    "top_artists": "Top Artists",
+    "recent_activity": "Recent Activity"
+  },
+  "discover": {
+    "title": "Neural discovery",
+    "subtitle": "Curated for your current state",
+    "search_placeholder": "Search by song, artist, or album...",
+    "trending": "Trending Now",
+    "moods": "Moods",
+    "recent_searches": "Recent Searches",
+    "voice_search": "Voice Search",
+    "hum_search": "Hum to Find"
+  },
+  "library": {
+    "title": "Your Music Library",
+    "liked_songs": "Liked Songs",
+    "recently_played": "Recently Played",
+    "no_songs": "Nothing here yet",
+    "no_liked": "Songs you like will appear here. Start discovering new music!",
+    "no_recent": "Your listening history is empty. Play some tracks to see them here."
+  },
+  "player": {
+    "queue": "Queue",
+    "ai_dj": "AI DJ Mode",
+    "shuffle": "Shuffle",
+    "repeat": "Repeat"
+  },
+  "landing": {
+    "hero_title": "Your Music. Understood.",
+    "hero_subtitle": "Understand the soundtrack of your life — every play, skip, and obsession decoded by neural intelligence.",
+    "cta_enter": "Enter the universe",
+    "cta_explore": "Scroll to explore",
+    "nav_features": "Features",
+    "nav_story": "Story",
+    "nav_signin": "Sign in"
+  }
+}

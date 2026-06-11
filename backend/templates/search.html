@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head><title>Song Search</title></head>
+<body>
+
+<h2>Search Any Song</h2>
+<form method="POST" action="/search">
+    <input type="text" name="song_name" placeholder="Enter song name..." required>
+    <button type="submit">Search</button>
+</form>
+
+{% if search_results %}
+<h3>Top Result & Similar Songs:</h3>
+{% for song in search_results %}
+<div style="border:1px solid #ccc; padding:10px; margin:10px; border-radius:8px;">
+    <img src="{{ song.album_art }}" width="80" height="80">
+    <strong>{{ song.name }}</strong> by {{ song.artist }}<br>
+    Album: {{ song.album }}<br>
+    {% if song.preview_url %}
+    <audio controls src="{{ song.preview_url }}"></audio><br>
+    {% endif %}
+    <a href="{{ song.spotify_url }}" target="_blank">Open in Spotify</a>
+</div>
+{% endfor %}
+
+{% if lyrics %}
+<h3>Lyrics for {{ song_name }}:</h3>
+<pre style="background:#f4f4f4; padding:15px; border-radius:8px; white-space:pre-wrap;">{{ lyrics }}</pre>
+{% endif %}
+
+{% if vibe_results %}
+<h3>Songs With Same Vibe:</h3>
+{% for song in vibe_results %}
+<div style="border:1px solid #aaa; padding:10px; margin:10px; border-radius:8px;">
+    <img src="{{ song.album_art }}" width="60" height="60">
+    <strong>{{ song.name }}</strong> by {{ song.artist }}<br>
+    {% if song.preview_url %}
+    <audio controls src="{{ song.preview_url }}"></audio><br>
+    {% endif %}
+    <a href="{{ song.spotify_url }}" target="_blank">Open in Spotify</a>
+</div>
+{% endfor %}
+{% endif %}
+{% endif %}
+
+</body>
+</html>

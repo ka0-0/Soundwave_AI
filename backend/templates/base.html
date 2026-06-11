@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Soundwave AI{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0a0b14;
+      --card: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f4f6ff;
+      --muted: #9aa3c7;
+      --primary: #7c5cff;
+      --cyan: #3de7ff;
+      --pink: #ff4fd8;
+      --success: #3dd68c;
+      --error: #ff6b8a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(124, 92, 255, 0.18), transparent 35%),
+        radial-gradient(circle at 80% 0%, rgba(61, 231, 255, 0.12), transparent 30%),
+        var(--bg);
+    }
+    .container {
+      width: min(960px, 92vw);
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    h1, h2, h3 { margin-top: 0; }
+    .muted { color: var(--muted); }
+    .flash {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+    .flash.success { background: rgba(61, 214, 140, 0.12); color: var(--success); }
+    .flash.error { background: rgba(255, 107, 138, 0.12); color: var(--error); }
+    label { display: block; margin-bottom: 0.35rem; font-size: 0.9rem; color: var(--muted); }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.8rem 1.2rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--cyan));
+      color: #081018;
+      width: 100%;
+    }
+    .btn-oauth {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+    .divider {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin: 1.25rem 0;
+      position: relative;
+    }
+    .divider::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span {
+      position: relative;
+      background: transparent;
+      padding: 0 0.75rem;
+    }
+    .link { color: var(--cyan); text-decoration: none; }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .nav a { color: var(--muted); text-decoration: none; margin-left: 1rem; }
+    .nav a:hover { color: var(--cyan); }
+  </style>
+  {% block extra_styles %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+</body>
+</html>
