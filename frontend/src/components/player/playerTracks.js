@@ -5,6 +5,13 @@ import tuNaSamjhe from "./dhurandhar.mp3";
 import bairan from "./Bairan.mp3";
 import Fortuner from "./Fortuner_1.mp3";
 import Kitaab from "./Kitab.mp3";
+import dhurCover from "./dhur.png";
+import jatCover from "./jat.png";
+import desiCover from "./my.png";
+import bairanCover from "./bairan.png";
+import fortunerCover from "./fortuner.png";
+import kitaabCover from "./kitaab.png";
+import haayeReCover from "./haaye.png";
 
 export const PLAYER_TRACKS = [
   {
@@ -14,7 +21,8 @@ export const PLAYER_TRACKS = [
     artist: "Revenge",
     accent: "#14b8a6",
     accentAlt: "#6366f1",
-    mood: "Romantic flow"
+    mood: "Romantic flow",
+    cover_url: dhurCover
   },
   {
     id: "jat-jatni",
@@ -23,7 +31,8 @@ export const PLAYER_TRACKS = [
     artist: "Desi Beats",
     accent: "#ec4899",
     accentAlt: "#a855f7",
-    mood: "Desi energy"
+    mood: "Desi energy",
+    cover_url: jatCover
   },
   {
     id: "my-queen",
@@ -32,7 +41,8 @@ export const PLAYER_TRACKS = [
     artist: "Kd Desirock",
     accent: "#3b82f6",
     accentAlt: "#a855f7",
-    mood: "Hip-hop drive"
+    mood: "Hip-hop drive",
+    cover_url: desiCover
   },
   {
     id: "intro",
@@ -41,7 +51,8 @@ export const PLAYER_TRACKS = [
     artist: "Banjare",
     accent: "#8b5cf6",
     accentAlt: "#22d3ee",
-    mood: "Electronic pulse"
+    mood: "Electronic pulse",
+    cover_url: haayeReCover
   },
   {
     id: "bairan",
@@ -50,7 +61,8 @@ export const PLAYER_TRACKS = [
     artist: "Banjare",
     accent: "#f43f5e",
     accentAlt: "#8b5cf6",
-    mood: "Emotional wave"
+    mood: "Emotional wave",
+    cover_url: bairanCover
   },
   {
     id: "Fortuner",
@@ -59,7 +71,8 @@ export const PLAYER_TRACKS = [
     artist: "Ruchika",
     accent: "#d8910c",
     accentAlt: "#df120b",
-    mood: "Energy"
+    mood: "Energy",
+    cover_url: fortunerCover
   },
   {
     id: "Kitaab",
@@ -68,7 +81,8 @@ export const PLAYER_TRACKS = [
     artist: "Legend",
     accent: "#0cd1d8",
     accentAlt: "#0954f7",
-    mood: "Chill"
+    mood: "Chill",
+    cover_url: kitaabCover
   },
 
 ];

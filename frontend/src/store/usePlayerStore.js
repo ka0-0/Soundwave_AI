@@ -2,12 +2,34 @@ import { create } from "zustand";
 import { PLAYER_TRACKS } from "../components/player/playerTracks";
 import { getAudioManager, trackUrlMatches } from "./audioEngine";
 import { connectMusicAnalyser } from "./musicAnalyser";
-const isAudioSource = (source) => source === "audio" || source === "deezer" || source === "itunes" || !source;
+const isAudioSource = (source) => source === "audio" || source === "deezer" || source === "itunes" || source === "local" || source === "database" || !source;
 
 function indexFromAudioSrc(audio, queue) {
   if (!audio?.src) return 0;
   const found = queue.findIndex((t) => trackUrlMatches(audio.src, t.src));
   return found >= 0 ? found : 0;
+}
+
+async function fetchRealPreviewUrl(title, artist) {
+  if (!title || !artist) return null;
+  const localTitles = ["dhurandhar", "jat jatni", "my queen", "haaye re", "bairan", "fortuner", "kitaab"];
+  const tTitle = title.toLowerCase().trim();
+  if (localTitles.includes(tTitle)) {
+    return null;
+  }
+  try {
+    const query = encodeURIComponent(`${artist} ${title}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&media=music&entity=song`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        return data.results[0].previewUrl;
+      }
+    }
+  } catch (e) {
+    console.error("iTunes dynamic resolver failed", e);
+  }
+  return null;
 }
 
 let initialIndex = 0;
@@ -197,8 +219,48 @@ export const usePlayerStore = create((set, get) => ({
     const track = targetQueue[index];
     if (!track) return;
 
+    // ROOT CAUSE INVESTIGATION PROCESS: Step 1 & 2
+    // Print the full recommendation object before playback and compare with PLAYER_TRACKS[0]
+    const workingTrack = PLAYER_TRACKS[0];
+    console.log("=== PLAYBACK DIAGNOSTICS: SIDE-BY-SIDE COMPARE ===");
+    console.log("WORKING TRACK (PLAYER_TRACKS[0]):", JSON.stringify(workingTrack, null, 2));
+    console.log("REQUESTED TRACK:", JSON.stringify(track, null, 2));
+    console.log(`WORKING TRACK info: id="${workingTrack?.id}" | title="${workingTrack?.title}" | artist="${workingTrack?.artist}" | cover_url="${workingTrack?.cover_url}" | audio_url="${workingTrack?.audio_url}" | preview_url="${workingTrack?.preview_url}" | stream_url="${workingTrack?.stream_url}" | src="${workingTrack?.src}"`);
+    console.log(`REQUESTED TRACK info: id="${track?.id}" | title="${track?.title}" | artist="${track?.artist}" | cover_url="${track?.cover_url}" | audio_url="${track?.audio_url}" | preview_url="${track?.preview_url}" | stream_url="${track?.stream_url}" | src="${track?.src}"`);
+    console.log("================================================");
+
     const source = track.source || "audio";
-    const url = track.src || track.audio_url || track.preview_url || track.preview;
+    let url = track.src || track.audio_url || track.preview_url || track.preview;
+
+    // Verify whether the audio URL field exists
+    const hasUrlField = !!url;
+    console.log(`[AUDIO DEBUG] Audio URL field exists: ${hasUrlField} (Value: ${url})`);
+
+    const isMock = track.isMockUrl || 
+                   !url || 
+                   url === "None" || 
+                   url === "null" || 
+                   url === "undefined" || 
+                   String(url).includes("cdn.soundwave.ai") || 
+                   String(url).includes("soundhelix.com");
+
+    if (isMock) {
+      try {
+        console.log(`[AUDIO Store] Track "${track.title}" is mock/SoundHelix. Attempting iTunes resolve.`);
+        const realUrl = await fetchRealPreviewUrl(track.title, track.artist);
+        if (realUrl) {
+          console.log(`[AUDIO Store] Successfully resolved real preview for "${track.title}":`, realUrl);
+          url = realUrl;
+          track.src = realUrl; // update in place
+        } else {
+          console.log(`[AUDIO Store] iTunes resolve returned no results for "${track.title}". Playing fallback.`);
+        }
+      } catch (e) {
+        console.warn("Failed to dynamically resolve preview via iTunes", e);
+      }
+    }
+
+    // Verification is handled upstream, play directly to preserve user gesture context
 
     const isSameTrack = trackUrlMatches(manager.audio.src, url);
 
@@ -206,22 +268,41 @@ export const usePlayerStore = create((set, get) => ({
       manager.audio.pause();
     }
 
+    // Save previous state in case we need it, but we can set the new selected song metadata as requested
     set({ sourceType: source, currentIndex: index, current: track, isPlaying: true });
 
     if (isAudioSource(source)) {
       if (options.fromStart) manager.audio.currentTime = 0;
       if (!isSameTrack) {
-        manager.audio.src = url;
+        manager.audio.src = url || "";
         manager.audio.load();
       }
+      console.log(`[AUDIO DEBUG] Final audio.src assigned: ${manager.audio.src}`);
+
       try {
         await manager.play();
         logAudioState("playTrack-success");
       } catch (e) {
-        console.warn("Playback failed to start", e);
+        console.error("=== PLAYBACK FAILURE DETECTED ===");
+        console.error("Failure Reason:", e.message || e);
+        console.error("Recommendation ID:", track.id);
+        console.error("Audio URL from API:", track.audio_url || track.preview_url || track.preview || "None");
+        console.error("Final audio.src assigned to player:", manager.audio.src);
+        console.error("=================================");
+
+        // Display a user-friendly error message, keep player state intact (not playing), queue unchanged, carousels mounted
         set({ isPlaying: false });
         logAudioState("playTrack-failed");
-        throw e;
+
+        const { useToastStore } = await import("./useToastStore");
+        useToastStore.getState().push({
+          type: "error",
+          title: "Playback Error",
+          message: "Unable to play this track. Audio source unavailable."
+        });
+
+        // Do not rethrow the error, handle it cleanly so the dashboard remains responsive and doesn't reload/crash
+        return;
       }
     } else {
       manager.audio.pause();

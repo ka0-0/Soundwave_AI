@@ -34,7 +34,7 @@ function hashCode(str) {
 function normalizeTrack(track) {
   if (!track) return null;
   if (track.accent && track.accentAlt) return track;
-  const trackId = track.id || track._id || "";
+  const trackId = String(track.id || track._id || "");
   const trackTitle = track.title || "";
   
   const hash = hashCode(trackId + trackTitle);

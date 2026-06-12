@@ -331,35 +331,50 @@ class SQLiteDB:
         
         import random
         random.seed(42)
-        GENRES = ["pop", "indie", "electronic", "rnb", "hip-hop", "ambient", "rock", "house", "lofi", "jazz"]
-        MOODS = ["study", "gym", "chill", "sleep", "travel", "party", "sad", "happy"]
-        ARTISTS = [
-            "Nova Bloom", "Echo Harbor", "Luna Drive", "Night Static", "Velvet Signal", "Neon Atlas", "Solar Haze",
-            "Blue Meridian", "Crimson Tide", "Aurora Lane", "Skyline Ritual", "Pulse District"
+        REAL_SONGS = [
+            {"title": "Blinding Lights", "artist": "The Weeknd", "album": "After Hours", "genre": ["pop"], "mood_tags": ["party", "happy"], "duration_seconds": 200, "cover_url": "https://picsum.photos/seed/blindinglights/600/600.webp", "release_year": 2020},
+            {"title": "Save Your Tears", "artist": "The Weeknd", "album": "After Hours", "genre": ["pop", "rnb"], "mood_tags": ["happy", "chill"], "duration_seconds": 215, "cover_url": "https://picsum.photos/seed/saveyoutears/600/600.webp", "release_year": 2020},
+            {"title": "Starboy", "artist": "The Weeknd", "album": "Starboy", "genre": ["rnb", "pop"], "mood_tags": ["hype", "party"], "duration_seconds": 230, "cover_url": "https://picsum.photos/seed/starboy/600/600.webp", "release_year": 2016},
+            {"title": "Believer", "artist": "Imagine Dragons", "album": "Evolve", "genre": ["rock", "pop"], "mood_tags": ["gym", "workout", "hype"], "duration_seconds": 204, "cover_url": "https://picsum.photos/seed/believer/600/600.webp", "release_year": 2017},
+            {"title": "Thunder", "artist": "Imagine Dragons", "album": "Evolve", "genre": ["pop", "rock"], "mood_tags": ["workout", "happy"], "duration_seconds": 187, "cover_url": "https://picsum.photos/seed/thunder/600/600.webp", "release_year": 2017},
+            {"title": "Counting Stars", "artist": "OneRepublic", "album": "Native", "genre": ["pop"], "mood_tags": ["happy", "travel"], "duration_seconds": 257, "cover_url": "https://picsum.photos/seed/countingstars/600/600.webp", "release_year": 2013},
+            {"title": "Apologize", "artist": "OneRepublic", "album": "Dreaming Out Loud", "genre": ["pop", "rnb"], "mood_tags": ["sad", "chill"], "duration_seconds": 208, "cover_url": "https://picsum.photos/seed/apologize/600/600.webp", "release_year": 2007},
+            {"title": "Yellow", "artist": "Coldplay", "album": "Parachutes", "genre": ["rock", "indie"], "mood_tags": ["chill", "sad"], "duration_seconds": 269, "cover_url": "https://picsum.photos/seed/yellow/600/600.webp", "release_year": 2000},
+            {"title": "Viva La Vida", "artist": "Coldplay", "album": "Viva la Vida", "genre": ["rock", "pop"], "mood_tags": ["happy", "travel"], "duration_seconds": 242, "cover_url": "https://picsum.photos/seed/vivalavida/600/600.webp", "release_year": 2008},
+            {"title": "Bad Guy", "artist": "Billie Eilish", "album": "When We All Fall Asleep", "genre": ["pop", "electronic"], "mood_tags": ["hype", "party"], "duration_seconds": 194, "cover_url": "https://picsum.photos/seed/badguy/600/600.webp", "release_year": 2019},
+            {"title": "Ocean Eyes", "artist": "Billie Eilish", "album": "Don't Smile at Me", "genre": ["pop", "ambient"], "mood_tags": ["sleep", "chill"], "duration_seconds": 200, "cover_url": "https://picsum.photos/seed/oceaneyes/600/600.webp", "release_year": 2016},
+            {"title": "Get Lucky", "artist": "Daft Punk", "album": "Random Access Memories", "genre": ["electronic", "house"], "mood_tags": ["party", "happy"], "duration_seconds": 249, "cover_url": "https://picsum.photos/seed/getlucky/600/600.webp", "release_year": 2013},
+            {"title": "One More Time", "artist": "Daft Punk", "album": "Discovery", "genre": ["electronic", "house"], "mood_tags": ["party", "hype"], "duration_seconds": 320, "cover_url": "https://picsum.photos/seed/onemoretime/600/600.webp", "release_year": 2000},
+            {"title": "Shape of You", "artist": "Ed Sheeran", "album": "Divide", "genre": ["pop"], "mood_tags": ["happy", "workout"], "duration_seconds": 233, "cover_url": "https://picsum.photos/seed/shapeofyou/600/600.webp", "release_year": 2017},
+            {"title": "Perfect", "artist": "Ed Sheeran", "album": "Divide", "genre": ["pop"], "mood_tags": ["chill", "happy"], "duration_seconds": 263, "cover_url": "https://picsum.photos/seed/perfect/600/600.webp", "release_year": 2017},
+            {"title": "Levitating", "artist": "Dua Lipa", "album": "Future Nostalgia", "genre": ["pop"], "mood_tags": ["party", "happy"], "duration_seconds": 203, "cover_url": "https://picsum.photos/seed/levitating/600/600.webp", "release_year": 2020},
+            {"title": "Don't Start Now", "artist": "Dua Lipa", "album": "Future Nostalgia", "genre": ["pop", "electronic"], "mood_tags": ["party", "workout"], "duration_seconds": 183, "cover_url": "https://picsum.photos/seed/dontstartnow/600/600.webp", "release_year": 2019},
+            {"title": "Uptown Funk", "artist": "Bruno Mars", "album": "Uptown Special", "genre": ["pop", "rnb"], "mood_tags": ["party", "happy", "hype"], "duration_seconds": 270, "cover_url": "https://picsum.photos/seed/uptownfunk/600/600.webp", "release_year": 2014},
+            {"title": "Just the Way You Are", "artist": "Bruno Mars", "album": "Doo-Wops & Hooligans", "genre": ["pop"], "mood_tags": ["happy", "chill"], "duration_seconds": 220, "cover_url": "https://picsum.photos/seed/justthewayyouare/600/600.webp", "release_year": 2010},
+            {"title": "Fix You", "artist": "Coldplay", "album": "X&Y", "genre": ["rock", "indie"], "mood_tags": ["sad", "chill"], "duration_seconds": 295, "cover_url": "https://picsum.photos/seed/fixyou/600/600.webp", "release_year": 2005}
         ]
         
-        for i in range(1, 51):
-            artist = random.choice(ARTISTS)
+        for i, s_data in enumerate(REAL_SONGS):
             song_id = str(ObjectId())
             cursor.execute("""
                 INSERT INTO songs (id, title, artist, album, genre, mood_tags, duration_seconds, audio_url, cover_url, release_year, features)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 song_id,
-                f"Signal #{i:02d}",
-                artist,
-                f"{artist} Vol.{random.randint(1, 6)}",
-                json.dumps(random.sample(GENRES, k=random.randint(1, 2))),
-                json.dumps(random.sample(MOODS, k=random.randint(1, 3))),
-                random.randint(150, 295),
-                f"https://cdn.soundwave.ai/audio/track-{i:02d}.mp3",
-                f"https://picsum.photos/seed/soundwave-{i:02d}/600/600.webp",
-                random.randint(2016, 2026),
+                s_data["title"],
+                s_data["artist"],
+                s_data["album"],
+                json.dumps(s_data["genre"]),
+                json.dumps(s_data["mood_tags"]),
+                s_data["duration_seconds"],
+                f"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-{ (i % 16) + 1 }.mp3",
+                s_data["cover_url"],
+                s_data["release_year"],
                 json.dumps({
-                    "energy": round(random.uniform(0.2, 0.95), 3),
-                    "valence": round(random.uniform(0.1, 0.95), 3),
-                    "tempo": round(random.uniform(70, 180), 2),
-                    "danceability": round(random.uniform(0.2, 0.98), 3),
+                    "energy": round(random.uniform(0.4, 0.95), 3),
+                    "valence": round(random.uniform(0.3, 0.95), 3),
+                    "tempo": round(random.uniform(80, 140), 2),
+                    "danceability": round(random.uniform(0.5, 0.95), 3),
                 })
             ))
         
@@ -379,8 +394,8 @@ class SQLiteDB:
             "Male",
             "United Kingdom",
             "Digital music enthusiast and audio analyst.",
-            json.dumps(["EDM", "Cyberpunk", "Synthwave"]),
-            json.dumps(["Nova Bloom", "Solar Haze"]),
+            json.dumps(["pop", "rock", "electronic"]),
+            json.dumps(["The Weeknd", "Imagine Dragons"]),
             datetime.utcnow().isoformat(),
             json.dumps({"themes": [], "moods": [], "genres": []})
         ))
@@ -402,9 +417,9 @@ class SQLiteDB:
                 demo_user_id,
                 sid,
                 played_at.isoformat(),
-                random.randint(20, 280),
+                random.randint(30, 280) if not skipped else random.randint(5, 29),
                 1 if skipped else 0,
-                random.randint(10, 70) if skipped else None,
+                random.randint(10, 29) if skipped else None,
                 random.choice(["recommendation", "playlist", "search"])
             ))
         
@@ -807,17 +822,17 @@ class SQLiteCollection:
                 for op, val in v.items():
                     if op == "$lt":
                         conditions.append(f"{k} < ?")
-                        params.append(val)
+                        params.append(val.isoformat() if isinstance(val, datetime) else val)
                     elif op == "$gte":
                         conditions.append(f"{k} >= ?")
-                        params.append(val)
+                        params.append(val.isoformat() if isinstance(val, datetime) else val)
                     elif op == "$in":
                         placeholders = ', '.join(['?' for _ in val])
                         conditions.append(f"{k} IN ({placeholders})")
                         params.extend([str(x) for x in val])
             else:
                 conditions.append(f"{k} = ?")
-                params.append(v)
+                params.append(v.isoformat() if isinstance(v, datetime) else v)
         
         return f"WHERE {' AND '.join(conditions)}" if conditions else "", params
 
@@ -850,6 +865,23 @@ class SQLiteCollection:
             d["insights"] = json.loads(d["insights"])
         if "high_contrast" in d:
             d["high_contrast"] = bool(d["high_contrast"])
+        
+        # Convert datetime strings back to datetime objects
+        datetime_keys = {
+            "played_at", "liked_at", "created_at", "updated_at", 
+            "completed_at", "expires_at", "revoked_at", "saved_at"
+        }
+        for k in datetime_keys:
+            if k in d and isinstance(d[k], str) and d[k]:
+                try:
+                    val_clean = d[k].replace("Z", "+00:00")
+                    d[k] = datetime.fromisoformat(val_clean)
+                except Exception:
+                    try:
+                        d[k] = datetime.fromisoformat(d[k].replace("Z", ""))
+                    except Exception:
+                        pass
+        
         if "id" in d:
             d["_id"] = d["id"]
         return d

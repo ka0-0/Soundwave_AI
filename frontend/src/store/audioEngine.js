@@ -1,11 +1,150 @@
 const AUDIO_KEY = "__soundwave_shared_audio__";
 
+class SmartAudioWrapper {
+  constructor() {
+    this.audio = null;
+    this.listeners = [];
+    this.isExternal = false;
+    this.recreateAudio(false); // starts as local
+  }
+
+  recreateAudio(isExternal) {
+    console.log(`[SmartAudio] Recreating audio element. External: ${isExternal}`);
+    
+    if (this.audio) {
+      try {
+        this.audio.pause();
+      } catch (e) {
+        console.warn("[SmartAudio] Pause old failed:", e);
+      }
+      this.listeners.forEach(({ event, callback }) => {
+        try {
+          this.audio.removeEventListener(event, callback);
+        } catch (e) {
+          console.warn("[SmartAudio] removeEventListener failed:", e);
+        }
+      });
+    }
+
+    const newAudio = new Audio();
+    newAudio.preload = "auto";
+    if (!isExternal) {
+      newAudio.crossOrigin = "anonymous";
+    }
+
+    if (this.audio) {
+      newAudio.volume = this.audio.volume;
+      newAudio.muted = this.audio.muted;
+    } else {
+      newAudio.volume = 0.55;
+      newAudio.muted = false;
+    }
+
+    this.listeners.forEach(({ event, callback }) => {
+      try {
+        newAudio.addEventListener(event, callback);
+      } catch (e) {
+        console.warn("[SmartAudio] addEventListener failed:", e);
+      }
+    });
+
+    this.audio = newAudio;
+    this.isExternal = isExternal;
+  }
+
+  get activeAudio() {
+    return this.audio;
+  }
+
+  get src() {
+    return this.audio.src;
+  }
+
+  set src(val) {
+    if (!val) {
+      this.audio.src = "";
+      return;
+    }
+    const isExternal = val.startsWith("http") && 
+                       !val.includes(window.location.host) && 
+                       !val.includes("localhost") && 
+                       !val.includes("127.0.0.1");
+    
+    if (this.isExternal !== isExternal) {
+      this.recreateAudio(isExternal);
+    }
+    
+    this.audio.src = val;
+  }
+
+  get volume() { return this.audio.volume; }
+  set volume(val) {
+    if (this.audio) this.audio.volume = val;
+  }
+
+  get currentTime() { return this.audio.currentTime; }
+  set currentTime(val) {
+    if (this.audio) this.audio.currentTime = val;
+  }
+
+  get paused() { return this.audio.paused; }
+  
+  get muted() { return this.audio.muted; }
+  set muted(val) {
+    if (this.audio) this.audio.muted = val;
+  }
+
+  get duration() { return this.audio.duration; }
+  get readyState() { return this.audio.readyState; }
+  get error() { return this.audio.error; }
+  
+  get preload() { return this.audio.preload; }
+  set preload(val) {
+    if (this.audio) this.audio.preload = val;
+  }
+
+  get crossOrigin() { return this.audio.crossOrigin; }
+  set crossOrigin(val) {
+    if (this.audio) this.audio.crossOrigin = val;
+  }
+
+  play() {
+    return this.audio.play();
+  }
+
+  pause() {
+    this.audio.pause();
+  }
+
+  load() {
+    this.audio.load();
+  }
+
+  addEventListener(event, callback) {
+    this.listeners.push({ event, callback });
+    if (this.audio) {
+      this.audio.addEventListener(event, callback);
+    }
+  }
+
+  removeEventListener(event, callback) {
+    this.listeners = this.listeners.filter(
+      (l) => !(l.event === event && l.callback === callback)
+    );
+    if (this.audio) {
+      this.audio.removeEventListener(event, callback);
+    }
+  }
+}
+
 class AudioManagerClass {
   constructor() {
     if (typeof window === "undefined") return;
 
-    if (!window[AUDIO_KEY]) {
-      const audio = new Audio();
+    const needsInstance = !window[AUDIO_KEY] || window[AUDIO_KEY].constructor.name !== "SmartAudioWrapper";
+    if (needsInstance) {
+      console.log("[AUDIO] Creating new SmartAudioWrapper instance");
+      const audio = new SmartAudioWrapper();
       audio.preload = "auto";
       audio.crossOrigin = "anonymous";
       window[AUDIO_KEY] = audio;
@@ -212,7 +351,7 @@ export function getAudioManager() {
 
 export function getSharedAudio() {
   const manager = getAudioManager();
-  return manager ? manager.audio : null;
+  return manager ? (manager.audio?.activeAudio || manager.audio) : null;
 }
 
 export function pauseAllExcept(shared) {

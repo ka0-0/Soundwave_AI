@@ -1,11 +1,31 @@
 import json
+import logging
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Header, Query, BackgroundTasks
 from app.database import db, redis
 from app.services.auth_service import get_current_user
-from app.services.recommendation_engine import recommend, get_ai_dj_queue
+from app.services.recommendation_engine import (
+    recommend, 
+    get_ai_dj_queue, 
+    get_dashboard_recommendations, 
+    invalidate_dashboard_cache
+)
 
+logger = logging.getLogger("soundwave.recommendations_route")
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
+
+
+@router.get("/dashboard")
+async def recommendations_dashboard(
+    background_tasks: BackgroundTasks,
+    authorization: str = Header(default="")
+):
+    logger.info("API Request Start: GET /recommendations/dashboard")
+    user = await get_current_user(authorization.replace("Bearer ", ""))
+    res = await get_dashboard_recommendations(str(user["_id"]), background_tasks)
+    logger.info("API Request Completion: GET /recommendations/dashboard | HTTP status: 200")
+    logger.info(f"Response payload summary keys: {list(res.keys())}")
+    return res
 
 
 @router.get("/ai-dj")

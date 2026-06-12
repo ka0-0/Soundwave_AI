@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, Sparkles, Music, Radio, Heart, Play, Pause, Plus, X,
@@ -11,12 +11,55 @@ import { useToastStore } from "../store/useToastStore";
 import { useFavouritesStore } from "../store/useFavouritesStore";
 import { useAnalyserStore, useMusicAnalyser } from "../hooks/useMusicAnalyser";
 import { apiGet, apiPost, apiSearch } from "../utils/api";
+import { getSharedAudio } from "../store/audioEngine";
+import { PLAYER_TRACKS } from "../components/player/playerTracks";
 
 // Helper: Format Time
 function formatTime(s) {
   if (!Number.isFinite(s) || s < 0) return "0:00";
   const m = Math.floor(s / 60);
   return `${m}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+}
+
+// Helper to hash a string to a number
+function hashCode(str) {
+  let hash = 0;
+  if (!str) return hash;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return hash;
+}
+
+// Helper to normalize and map track objects
+function normalizeTrack(track) {
+  if (!track) return null;
+  const trackId = String(track.id || track._id || "");
+  const trackTitle = track.title || "";
+  
+  const rawUrl = track.src || track.audio_url || track.preview_url || track.preview || "";
+  const isMockUrl = !rawUrl || 
+                    rawUrl === "None" || 
+                    rawUrl === "null" || 
+                    rawUrl === "undefined" || 
+                    String(rawUrl).includes("cdn.soundwave.ai") ||
+                    String(rawUrl).includes("soundhelix.com");
+  
+  const hash = hashCode(trackId + trackTitle);
+  const localIndex = Math.abs(hash) % PLAYER_TRACKS.length;
+  const localFallback = PLAYER_TRACKS[localIndex];
+  
+  return {
+    ...track,
+    id: trackId,
+    src: isMockUrl ? localFallback.src : rawUrl,
+    isMockUrl: isMockUrl,
+    cover_url: track.cover_url || track.album_art || localFallback.cover_url || "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200&h=200&fit=crop",
+    accent: track.accent || localFallback.accent || "#8b5cf6",
+    accentAlt: track.accentAlt || localFallback.accentAlt || "#06b6d4"
+  };
 }
 
 // ── DJ Cosmic Warp Field Background Canvas ──
@@ -211,8 +254,10 @@ function CompactWaveform({ accent, accentAlt, isPlaying }) {
     return () => cancelAnimationFrame(raf);
   }, [accent, accentAlt, isPlaying]);
 
-  return <canvas ref={canvasRef} className="w-[180px] h-[30px] opacity-80" />;
+  return <canvas ref={canvasRef} className="w-full max-w-[180px] h-[30px] opacity-80" />;
 }
+
+
 
 // ── Main Redesigned Dashboard Page ──
 export default function Dashboard() {
@@ -228,6 +273,19 @@ export default function Dashboard() {
   } = usePlayerStore();
 
   useMusicAnalyser(true);
+
+  const [debugInfo, setDebugInfo] = useState("");
+  useEffect(() => {
+    const intv = setInterval(() => {
+      const audio = getSharedAudio();
+      if (audio) {
+        setDebugInfo(`Class: ${audio.constructor?.name || "Audio"} | Src: ${audio.src ? audio.src.substring(0, 40) + "..." : "none"} | Ready: ${audio.readyState} | Err: ${audio.error ? audio.error.code : "none"} | Paused: ${audio.paused}`);
+      } else {
+        setDebugInfo("No Audio");
+      }
+    }, 300);
+    return () => clearInterval(intv);
+  }, []);
 
   const [analysis, setAnalysis] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -246,7 +304,12 @@ export default function Dashboard() {
     setSearchResults([]);
     try {
       const data = await apiSearch(queryStr.trim());
-      setSearchResults(data.tracks || []);
+      const tracks = data.tracks || [];
+      setSearchResults(tracks.map(normalizeTrack));
+
+      // Save search query to sqlite backend to trigger taste profiling
+      apiPost(`/workspace/search?query=${encodeURIComponent(queryStr.trim())}&results_count=${tracks.length}`)
+        .catch((e) => console.error("Failed to save search:", e));
     } catch (err) {
       console.error("[DASHBOARD] Search failed", err);
       pushToast({ type: "error", title: "Search Error", message: "Failed to query tracks." });
@@ -256,46 +319,44 @@ export default function Dashboard() {
   };
 
   const handlePlaySearchResult = async (trackItem) => {
-    const idx = queue.findIndex(t => t.id === trackItem.id || t.title.toLowerCase() === trackItem.title.toLowerCase());
+    const norm = normalizeTrack(trackItem);
+    const idx = queue.findIndex(t => t.id === norm.id || t.title.toLowerCase() === norm.title.toLowerCase());
     if (idx !== -1) {
       await playTrack(idx, { fromStart: true });
     } else {
-      addToQueue(trackItem);
-      setTimeout(async () => {
-        const updatedQueue = usePlayerStore.getState().queue;
-        const targetIdx = updatedQueue.findIndex(t => t.id === trackItem.id);
-        if (targetIdx !== -1) {
-          await playTrack(targetIdx, { fromStart: true });
-        }
-      }, 60);
+      addToQueue(norm);
+      const updatedQueue = usePlayerStore.getState().queue;
+      const targetIdx = updatedQueue.findIndex(t => t.id === norm.id);
+      if (targetIdx !== -1) {
+        await playTrack(targetIdx, { fromStart: true });
+      }
     }
-    pushToast({ type: "success", title: "Playing Track", message: `Playing "${trackItem.title}"` });
+    pushToast({ type: "success", title: "Playing Track", message: `Playing "${norm.title}"` });
   };
 
   // Load dashboard data
+  const loadDashboard = async () => {
+    setLoading(true);
+    try {
+      const [currentAnalysis, djData, analytics] = await Promise.all([
+        apiGet("/analysis/current").catch(() => null),
+        apiGet("/recommendations/ai-dj").catch(() => []),
+        apiGet("/analytics/summary").catch(() => null),
+      ]);
+      const normalizedDj = Array.isArray(djData) ? djData.map(normalizeTrack) : [];
+      
+      setAnalysis(currentAnalysis);
+      setAiDjQueue(normalizedDj);
+      setAnalyticsData(analytics);
+    } catch (err) {
+      console.error("[DASHBOARD] Load error", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let mounted = true;
-    const loadDashboard = async () => {
-      setLoading(true);
-      try {
-        const [currentAnalysis, djData, analytics] = await Promise.all([
-          apiGet("/analysis/current").catch(() => null),
-          apiGet("/recommendations/ai-dj").catch(() => []),
-          apiGet("/analytics/summary").catch(() => null),
-        ]);
-        if (mounted) {
-          setAnalysis(currentAnalysis);
-          setAiDjQueue(Array.isArray(djData) ? djData : []);
-          setAnalyticsData(analytics);
-        }
-      } catch (err) {
-        console.error("[DASHBOARD] Load error", err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
     loadDashboard();
-    return () => { mounted = false; };
   }, []);
 
   // Action Triggers
@@ -310,8 +371,9 @@ export default function Dashboard() {
   };
 
   const handleQueueSong = (trackItem) => {
-    addToQueue(trackItem);
-    pushToast({ type: "success", title: "Queue Updated", message: `"${trackItem.title}" added to queue.` });
+    const norm = normalizeTrack(trackItem);
+    addToQueue(norm);
+    pushToast({ type: "success", title: "Queue Updated", message: `"${norm.title}" added to queue.` });
   };
 
   // Resolve dynamic colors
@@ -385,7 +447,7 @@ export default function Dashboard() {
         <div className="w-full flex flex-col lg:flex-row justify-between items-center gap-8 lg:min-h-[500px] lg:h-[76vh] relative py-4">
           
           {/* LEFT: Greeting + Compact Telemetry Stats Strip + AI Insight */}
-          <div className="flex flex-col gap-6 text-left max-w-xl">
+          <div className="flex flex-col gap-6 text-left w-full lg:max-w-xl">
             <div>
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
@@ -400,7 +462,7 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-4xl md:text-5xl font-black text-display tracking-tight text-white mt-1"
+                className="text-[clamp(1.75rem,5vw,3rem)] font-black text-display tracking-tight text-white mt-1 leading-tight break-words"
               >
                 {greetingText},<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-violet-300">
@@ -414,7 +476,7 @@ export default function Dashboard() {
             </div>
 
             {/* Neural Transceiver Search Input */}
-            <div className="relative w-full max-w-md mt-1 z-20">
+            <div className="relative w-full lg:max-w-md mt-1 z-20">
               <input
                 type="text"
                 placeholder="Search tracks, artists, or moods..."
@@ -437,26 +499,26 @@ export default function Dashboard() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="glass-premium gold-border rounded-2xl p-4 flex flex-wrap gap-x-6 gap-y-3 items-center justify-between border border-white/5"
+              className="glass-premium gold-border rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-x-6 gap-y-3 items-center justify-between border border-white/5 w-full"
             >
-              <div>
+              <div className="min-w-0">
                 <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Total Songs</p>
                 <p className="text-sm font-black text-white mt-0.5">{totalSongs} tracks</p>
               </div>
-              <div className="h-6 w-px bg-white/5 hidden sm:block" />
-              <div>
+              <div className="h-6 w-px bg-white/5 hidden lg:block animate-pulse" />
+              <div className="min-w-0">
                 <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Listening Time</p>
                 <p className="text-sm font-black text-cyan-300 mt-0.5">{listeningHours} hrs</p>
               </div>
-              <div className="h-6 w-px bg-white/5 hidden sm:block" />
-              <div>
+              <div className="h-6 w-px bg-white/5 hidden lg:block animate-pulse" />
+              <div className="min-w-0">
                 <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Active Streak</p>
                 <p className="text-sm font-black text-pink-400 mt-0.5">🔥 {streakDays} days</p>
               </div>
-              <div className="h-6 w-px bg-white/5 hidden sm:block" />
-              <div>
+              <div className="h-6 w-px bg-white/5 hidden lg:block animate-pulse" />
+              <div className="min-w-0">
                 <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Dominant Mood</p>
-                <p className="text-sm font-black text-violet-300 mt-0.5">{dominantMood}</p>
+                <p className="text-sm font-black text-violet-300 mt-0.5 truncate">{dominantMood}</p>
               </div>
             </motion.div>
 
@@ -491,7 +553,7 @@ export default function Dashboard() {
               className="w-full max-w-[560px] h-auto lg:h-[440px] glass-premium rounded-[2rem] p-6 relative z-10 overflow-hidden flex flex-col md:flex-row gap-6 items-center border border-white/10"
             >
               {/* Left Side: Capped 320x320 Album Art */}
-              <div className="w-[280px] h-[280px] md:w-[320px] md:h-[320px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 relative group shrink-0">
+              <div className="w-[280px] md:w-[320px] max-w-full aspect-square rounded-2xl overflow-hidden shadow-2xl border border-white/10 relative group shrink-0">
                 <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
                      style={{ backgroundImage: `url(${track.cover_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop"})` }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -505,7 +567,7 @@ export default function Dashboard() {
               </div>
 
               {/* Right Side: Player Details, Seek Bar, Waveform & Controls */}
-              <div className="flex-1 w-full min-w-0 flex flex-col justify-between h-full py-1">
+              <div className="flex-1 w-full min-w-0 flex flex-col justify-between md:h-full py-1 gap-4 md:gap-0">
                 {/* Meta details */}
                 <div>
                   <div className="flex justify-between items-center gap-1.5 mb-1.5">
@@ -518,6 +580,10 @@ export default function Dashboard() {
                   </div>
                   <h2 className="text-white text-lg font-black tracking-wide truncate leading-tight">{track.title}</h2>
                   <p className="text-[10px] text-muted font-bold uppercase tracking-widest truncate mt-0.5">{track.artist}</p>
+                  {/* Diagnostic Debug info */}
+                  <div className="text-[9px] font-mono text-cyan-400 mt-1 truncate w-full" title={debugInfo}>
+                    {debugInfo}
+                  </div>
                 </div>
 
                 {/* Symmetric compact visualizer */}
@@ -541,8 +607,11 @@ export default function Dashboard() {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                       aria-label="Seek"
                     />
-                    <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full group-hover:brightness-110"
-                         style={{ width: `${seekPercent}%` }} />
+                    <div className="absolute left-0 top-0 bottom-0 rounded-full group-hover:brightness-110"
+                         style={{ 
+                           width: `${seekPercent}%`,
+                           background: `linear-gradient(90deg, ${accent}, ${accentAlt})`
+                         }} />
                   </div>
                 </div>
 
@@ -555,17 +624,17 @@ export default function Dashboard() {
                     <Shuffle size={14} />
                   </button>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => skip(-1)} className="p-2 text-muted hover:text-white transition-colors">
+                    <button onClick={() => skip(-1)} className="p-2 text-muted hover:text-white transition-colors animate-pulse" style={{ minWidth: 44, minHeight: 44, display: 'flex', items: 'center', justify: 'center' }}>
                       <SkipBack size={16} />
                     </button>
                     <button
                       onClick={togglePlay}
-                      style={{ background: `linear-gradient(135deg, ${accent}, ${accentAlt})` }}
+                      style={{ background: `linear-gradient(135deg, ${accent}, ${accentAlt})`, minWidth: 44, minHeight: 44 }}
                       className="w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
                     >
                       {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
                     </button>
-                    <button onClick={() => skip(1)} className="p-2 text-muted hover:text-white transition-colors">
+                    <button onClick={() => skip(1)} className="p-2 text-muted hover:text-white transition-colors animate-pulse" style={{ minWidth: 44, minHeight: 44, display: 'flex', items: 'center', justify: 'center' }}>
                       <SkipForward size={16} />
                     </button>
                   </div>
@@ -582,6 +651,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => track.id && toggle(track)}
                     className="flex items-center gap-1.5 text-[9px] text-muted hover:text-white transition-colors font-bold uppercase"
+                    style={{ minHeight: 44 }}
                   >
                     <Heart size={12} fill={isFavourite(track.id) ? "#ec4899" : "none"} stroke={isFavourite(track.id) ? "#ec4899" : "currentColor"} className={isFavourite(track.id) ? "text-pink-400" : ""} />
                     {isFavourite(track.id) ? "Loved Song" : "Love Song"}
@@ -741,7 +811,7 @@ export default function Dashboard() {
               {aiDjQueue.slice(0, 3).map((item, idx) => (
                 <div
                   key={idx}
-                  onClick={() => handlePlaySong(item.title || item.name)}
+                  onClick={() => handlePlaySearchResult(item)}
                   className="rounded-xl p-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-500/35 transition-all cursor-pointer flex items-center gap-3 group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 group-hover:bg-cyan-500 group-hover:text-black transition-colors">
@@ -825,7 +895,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
-            className="fixed inset-x-4 md:inset-x-auto md:right-12 top-24 z-50 max-w-lg w-full md:w-[480px] p-6 rounded-3xl glass-premium gold-border border border-cyan-500/20 shadow-[0_32px_128px_rgba(0,0,0,0.95)]"
+            className="fixed left-4 right-4 md:left-auto md:right-12 top-24 z-50 md:w-[480px] p-6 rounded-3xl glass-premium gold-border border border-cyan-500/20 shadow-[0_32px_128px_rgba(0,0,0,0.95)]"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">

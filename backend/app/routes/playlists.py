@@ -4,6 +4,7 @@ from fastapi import APIRouter, Header, HTTPException
 from app.database import db
 from app.schemas.playlist import PlaylistCreate, PlaylistUpdate
 from app.services.auth_service import get_current_user
+from app.services.recommendation_engine import invalidate_dashboard_cache
 
 router = APIRouter(prefix="/playlists", tags=["Playlists"])
 
@@ -36,6 +37,7 @@ async def create_playlist(payload: PlaylistCreate, authorization: str = Header(d
     }
     result = await db.playlists.insert_one(doc)
     doc["_id"] = result.inserted_id
+    await invalidate_dashboard_cache(str(user["_id"]))
     return serialize(doc)
 
 
@@ -49,6 +51,7 @@ async def update_playlist(playlist_id: str, payload: PlaylistUpdate, authorizati
     updates["updated_at"] = datetime.utcnow()
     await db.playlists.update_one({"_id": ObjectId(playlist_id)}, {"$set": updates})
     new_doc = await db.playlists.find_one({"_id": ObjectId(playlist_id)})
+    await invalidate_dashboard_cache(str(user["_id"]))
     return serialize(new_doc)
 
 
@@ -58,6 +61,7 @@ async def delete_playlist(playlist_id: str, authorization: str = Header(default=
     res = await db.playlists.delete_one({"_id": ObjectId(playlist_id), "user_id": str(user["_id"])})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    await invalidate_dashboard_cache(str(user["_id"]))
     return {"message": "Playlist deleted"}
 
 
@@ -68,6 +72,7 @@ async def add_song(playlist_id: str, song_id: str, authorization: str = Header(d
         {"_id": ObjectId(playlist_id), "user_id": str(user["_id"])},
         {"$addToSet": {"song_ids": song_id}, "$set": {"updated_at": datetime.utcnow()}},
     )
+    await invalidate_dashboard_cache(str(user["_id"]))
     return {"message": "Song added"}
 
 
@@ -78,4 +83,5 @@ async def remove_song(playlist_id: str, song_id: str, authorization: str = Heade
         {"_id": ObjectId(playlist_id), "user_id": str(user["_id"])},
         {"$pull": {"song_ids": song_id}, "$set": {"updated_at": datetime.utcnow()}},
     )
+    await invalidate_dashboard_cache(str(user["_id"]))
     return {"message": "Song removed"}

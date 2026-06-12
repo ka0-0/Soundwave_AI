@@ -4,7 +4,6 @@ import { apiGet, apiPost, ApiError, storeAuthTokens } from "../utils/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useToastStore } from "../store/useToastStore";
 import AuthLayout from "../components/auth/AuthLayout";
-import SocialLogin from "../components/auth/SocialLogin";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 
@@ -59,16 +58,6 @@ export default function Login() {
     }
   }
 
-  async function handleSocialSelect(providerId) {
-    if (providerId === "google") {
-      console.info("[OAuth] Initiating Google login redirect...");
-      // The backend route will handle the redirect to Google
-      window.location.href = "/api/v1/auth/google/login";
-    } else {
-      pushToast({ type: "info", message: `${providerId} auth coming soon.` });
-    }
-  }
-
   if (isCheckingAuth) return null;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
@@ -93,12 +82,7 @@ export default function Login() {
           Enter your universe
         </Button>
 
-        <div className="relative py-2 text-center text-xs text-muted">
-          <span className="relative z-10 bg-transparent px-2">or continue with</span>
-          <div className="absolute left-0 right-0 top-1/2 h-px bg-white/10" />
-        </div>
 
-        <SocialLogin onSelect={handleSocialSelect} />
 
         <p className="text-center text-sm text-muted">
           New here?{" "}

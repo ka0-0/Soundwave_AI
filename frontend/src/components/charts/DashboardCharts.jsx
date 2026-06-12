@@ -40,10 +40,10 @@ const genreData = [
 ];
 
 const artistData = [
-  { name: "Nova Bloom", plays: 84 },
-  { name: "Neon Atlas", plays: 70 },
-  { name: "Echo Harbor", plays: 62 },
-  { name: "Pulse City", plays: 54 }
+  { name: "The Weeknd", plays: 84 },
+  { name: "Imagine Dragons", plays: 70 },
+  { name: "Coldplay", plays: 62 },
+  { name: "Billie Eilish", plays: 54 }
 ];
 
 const moodData = [

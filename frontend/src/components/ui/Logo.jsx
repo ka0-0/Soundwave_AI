@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
+import logoSrc from "./logon.jpeg";
 
 const placeholderLogo = "https://placehold.co/400x400/020204/c5a059?text=SoundWave+AI";
 
 export default function Logo({ className = "h-8", animate = true }) {
-  const logoSrc = "/favicon.png";
+<img src={logoSrc} alt="SoundWave AI" />;
 
   const logoVariants = {
     initial: { opacity: 0, scale: 0.9, filter: "brightness(0) saturate(100%)" },

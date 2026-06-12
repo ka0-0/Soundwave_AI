@@ -4,6 +4,7 @@ from fastapi import APIRouter, Header, HTTPException, Query
 from app.database import db
 from app.schemas.music import SongEventRequest, SongListResponse
 from app.services.auth_service import get_current_user
+from app.services.recommendation_engine import invalidate_dashboard_cache
 
 router = APIRouter(prefix="/songs", tags=["Songs"])
 
@@ -56,17 +57,20 @@ async def log_play(song_id: str, payload: SongEventRequest, authorization: str =
     song = await db.songs.find_one({"_id": ObjectId(song_id)})
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
+    duration = payload.duration_played or song["duration_seconds"]
     await db.play_events.insert_one(
         {
             "user_id": str(user["_id"]),
             "song_id": song_id,
             "played_at": datetime.utcnow(),
-            "duration_played": payload.duration_played or song["duration_seconds"],
+            "duration_played": duration,
             "skipped": False,
             "skip_at_second": None,
             "source": payload.source,
         }
     )
+    if duration >= 30:
+        await invalidate_dashboard_cache(str(user["_id"]))
     return {"message": "Play event logged"}
 
 
@@ -93,6 +97,8 @@ async def toggle_like(song_id: str, authorization: str = Header(default="")):
     existing = await db.liked_songs.find_one({"user_id": str(user["_id"]), "song_id": song_id})
     if existing:
         await db.liked_songs.delete_one({"_id": existing["_id"]})
+        await invalidate_dashboard_cache(str(user["_id"]))
         return {"message": "Song unliked"}
     await db.liked_songs.insert_one({"user_id": str(user["_id"]), "song_id": song_id, "liked_at": datetime.utcnow()})
+    await invalidate_dashboard_cache(str(user["_id"]))
     return {"message": "Song liked"}

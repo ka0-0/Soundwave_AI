@@ -5,7 +5,8 @@ export default function GlassCard({
   className = "",
   interactive = true,
   delay = 0,
-  gradient = false
+  gradient = false,
+  ...props
 }) {
   return (
     <motion.div
@@ -26,6 +27,7 @@ export default function GlassCard({
           : undefined
       }
       className={`glass-premium rounded-card p-6 transition-all duration-500 perspective-1000 ${gradient ? "gold-border" : ""} ${className}`}
+      {...props}
     >
       {children}
     </motion.div>

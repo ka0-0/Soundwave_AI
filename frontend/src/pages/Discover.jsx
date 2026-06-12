@@ -385,6 +385,19 @@ export default function Discover() {
         setIsListening(false);
       };
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // Ignore if already stopped
+        }
+      }
+    };
   }, [handleSearch, pushToast]);
 
   const toggleVoiceSearch = () => {

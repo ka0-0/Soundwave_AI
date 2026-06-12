@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Settings, Heart, History, FileText, Globe, Moon, Sun, Monitor, 
+  Settings, Heart, History, FileText, Moon, Sun, Monitor, 
   User, Mail, MapPin, Calendar, Music, Mic, Edit3, Save, Sparkles, Image as ImageIcon,
   ChevronRight, Download, Trash2, Check, X, Zap, Star
 } from "lucide-react";
@@ -322,27 +322,6 @@ export default function Profile() {
                       <h2 className="text-xl font-bold">Preferences</h2>
                     </div>
                     <div className="space-y-6">
-                      <div>
-                        <div className="flex items-center gap-2 text-xs text-muted mb-3">
-                          <Globe size={14} />
-                          <span>Language</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {LANGUAGES.slice(0, 3).map((l) => (
-                            <button
-                              key={l.code}
-                              onClick={() => setLanguage(l.code)}
-                              className={`px-3 py-2 rounded-lg text-[10px] font-medium transition-all ${
-                                language === l.code 
-                                  ? "bg-gold/20 text-gold border border-gold/30" 
-                                  : "bg-white/5 text-secondary hover:bg-white/10"
-                              }`}
-                            >
-                              {l.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                       <div>
                         <div className="flex items-center gap-2 text-xs text-muted mb-3">
                           <Monitor size={14} />

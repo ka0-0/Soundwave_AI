@@ -101,6 +101,13 @@ export default function App() {
 
     const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
     const isPublicPath = publicRoutes.includes(location.pathname);
+    let clickHandler, keydownHandler, touchstartHandler;
+
+    const removeListeners = () => {
+      if (clickHandler) window.removeEventListener("click", clickHandler);
+      if (keydownHandler) window.removeEventListener("keydown", keydownHandler);
+      if (touchstartHandler) window.removeEventListener("touchstart", touchstartHandler);
+    };
 
     if (isPublicPath) {
       if (ambientStartedRef.current) return;
@@ -134,7 +141,7 @@ export default function App() {
             } catch (rErr) {
               console.warn("Failed to resume analyser context on user gesture", rErr);
             }
- 
+
             try {
               const latestState = useAuthStore.getState();
               const latestPlayer = usePlayerStore.getState();
@@ -155,11 +162,9 @@ export default function App() {
             }
           };
 
-          const removeListeners = () => {
-            window.removeEventListener("click", playOnInteraction);
-            window.removeEventListener("keydown", playOnInteraction);
-            window.removeEventListener("touchstart", playOnInteraction);
-          };
+          clickHandler = playOnInteraction;
+          keydownHandler = playOnInteraction;
+          touchstartHandler = playOnInteraction;
 
           window.addEventListener("click", playOnInteraction);
           window.addEventListener("keydown", playOnInteraction);
@@ -175,6 +180,10 @@ export default function App() {
       }
       ambientStartedRef.current = false;
     }
+
+    return () => {
+      removeListeners();
+    };
   }, [isAuthenticated, location.pathname, playTrack, fadeOut, isPlaying, currentIndex]);
 
   return (

@@ -5,6 +5,7 @@ from typing import Any
 from app.schemas.workspace import UserPreferencesOut, UserPreferencesUpdate, WorkspaceBootstrap
 from app.services.auth_service import get_current_user
 from app.services import workspace_service as ws
+from app.services.recommendation_engine import invalidate_dashboard_cache
 
 router = APIRouter(prefix="/workspace", tags=["Workspace"])
 
@@ -45,19 +46,26 @@ async def update_preferences(payload: UserPreferencesUpdate, authorization: str 
 async def save_search(query: str, search_type: str = "song", results_count: int = 0, authorization: str = Header(default="")):
     user = await _user(authorization)
     await ws.save_search(str(user["_id"]), query, search_type, results_count)
+    await invalidate_dashboard_cache(str(user["_id"]))
     return {"status": "saved"}
 
 
 @router.post("/favorites")
 async def toggle_favorite(payload: FavoritePayload, authorization: str = Header(default="")):
     user = await _user(authorization)
-    return await ws.toggle_favorite(str(user["_id"]), payload.track_id, payload.track_data)
+    res = await ws.toggle_favorite(str(user["_id"]), payload.track_id, payload.track_data)
+    await invalidate_dashboard_cache(str(user["_id"]))
+    return res
 
 
 @router.post("/recently-played")
 async def save_recently_played(payload: RecentlyPlayedPayload, authorization: str = Header(default="")):
     user = await _user(authorization)
     await ws.save_recently_played(str(user["_id"]), payload.song_id, payload.track_data)
+    track_data = payload.track_data or {}
+    duration = float(track_data.get("duration", track_data.get("duration_seconds", 0)))
+    if duration >= 30:
+        await invalidate_dashboard_cache(str(user["_id"]))
     return {"status": "saved"}
 
 

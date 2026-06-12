@@ -24,6 +24,24 @@ export function connectMusicAnalyser() {
   const audio = getSharedAudio();
   if (!audio) return null;
 
+  // Do NOT connect non-CORS elements to the Web Audio API to prevent browser muting
+  if (audio.crossOrigin !== "anonymous") {
+    if (connectedAudio && connectedAudio !== audio) {
+      console.log("[Analyser] Non-CORS audio element. Cleaning up old analyser.");
+      if (audioContext) {
+        audioContext.close().catch(() => {});
+      }
+      audioContext = null;
+      sourceNode = null;
+      analyserNode = null;
+      bassFilter = null;
+      midFilter = null;
+      highFilter = null;
+      connectedAudio = null;
+    }
+    return null;
+  }
+
   if (analyserNode && sourceNode && connectedAudio === audio) return analyserNode;
 
   try {
@@ -137,6 +155,20 @@ export function setEqualizerPreset(presetName) {
 }
 
 export function readMusicLevels() {
+  const audio = getSharedAudio();
+  const isPlaying = audio ? !audio.paused : false;
+
+  // If the audio is playing but we are not connected to the analyser (e.g. non-CORS audio)
+  if (isPlaying && (!analyserNode || !frequencyData)) {
+    const t = Date.now() * 0.004;
+    // Generate organic-looking simulated levels
+    const simBass = 0.5 + Math.sin(t * 2.0) * 0.2 + Math.cos(t * 0.75) * 0.1;
+    const simMid = 0.4 + Math.sin(t * 1.4) * 0.15 + Math.cos(t * 0.45) * 0.08;
+    const simHigh = 0.3 + Math.sin(t * 2.8) * 0.12 + Math.cos(t * 1.15) * 0.07;
+    const simEnergy = (simBass * 0.5 + simMid * 0.35 + simHigh * 0.15);
+    return { energy: simEnergy, bass: simBass, mid: simMid, high: simHigh };
+  }
+
   if (!analyserNode || !frequencyData) {
     return { energy: 0, bass: 0, mid: 0, high: 0 };
   }
@@ -162,6 +194,16 @@ export function readMusicLevels() {
   high /= len - midEnd || 1;
 
   const energy = (bass * 0.5 + mid * 0.35 + high * 0.15);
+
+  // Fallback: If the audio is playing but we read all zeroes (e.g. CORS-tainted source)
+  if (isPlaying && energy === 0) {
+    const t = Date.now() * 0.004;
+    const simBass = 0.5 + Math.sin(t * 2.0) * 0.2 + Math.cos(t * 0.75) * 0.1;
+    const simMid = 0.4 + Math.sin(t * 1.4) * 0.15 + Math.cos(t * 0.45) * 0.08;
+    const simHigh = 0.3 + Math.sin(t * 2.8) * 0.12 + Math.cos(t * 1.15) * 0.07;
+    const simEnergy = (simBass * 0.5 + simMid * 0.35 + simHigh * 0.15);
+    return { energy: simEnergy, bass: simBass, mid: simMid, high: simHigh };
+  }
 
   return { energy, bass, mid, high };
 }

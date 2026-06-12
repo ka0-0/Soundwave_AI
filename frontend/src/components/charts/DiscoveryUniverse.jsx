@@ -112,13 +112,13 @@ function CelestialBody({ artist, x, y, size, color, index, hovered, onHover, isE
 }
 
 const PLACEHOLDER_BODIES = [
-  { name: "Nova Bloom", genre: "Indie", x: 25, y: 30, size: 10 },
-  { name: "Echo Harbor", genre: "Electronic", x: 55, y: 20, size: 8 },
-  { name: "Neon Atlas", genre: "Pop", x: 78, y: 40, size: 7 },
-  { name: "Pulse City", genre: "Hip-Hop", x: 65, y: 68, size: 9 },
-  { name: "Drift Wave", genre: "Indie", x: 35, y: 65, size: 6 },
-  { name: "Solstice", genre: "Jazz", x: 15, y: 58, size: 5 },
-  { name: "Orbit", genre: "Electronic", x: 88, y: 60, size: 6 },
+  { name: "The Weeknd", genre: "Pop", x: 25, y: 30, size: 10 },
+  { name: "Imagine Dragons", genre: "Rock", x: 55, y: 20, size: 8 },
+  { name: "Coldplay", genre: "Rock", x: 78, y: 40, size: 7 },
+  { name: "Billie Eilish", genre: "Pop", x: 65, y: 68, size: 9 },
+  { name: "OneRepublic", genre: "Pop", x: 35, y: 65, size: 6 },
+  { name: "Bruno Mars", genre: "Pop", x: 15, y: 58, size: 5 },
+  { name: "Daft Punk", genre: "Electronic", x: 88, y: 60, size: 6 },
 ];
 
 export default function DiscoveryUniverse({ artists }) {

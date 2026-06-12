@@ -4,10 +4,10 @@ import { useMemo } from "react";
 export default function FloatingArtists() {
   const artists = useMemo(
     () => [
-      { name: "Nova Bloom", mood: "Dreamwave", x: "9%", y: "18%", d: 12 },
-      { name: "Echo Harbor", mood: "Synth Pop", x: "76%", y: "24%", d: 16 },
-      { name: "Luna Drive", mood: "Neon R&B", x: "18%", y: "68%", d: 14 },
-      { name: "Pulse District", mood: "Future House", x: "72%", y: "70%", d: 18 }
+      { name: "The Weeknd", mood: "Synth R&B", x: "9%", y: "18%", d: 12 },
+      { name: "Imagine Dragons", mood: "Indie Rock", x: "76%", y: "24%", d: 16 },
+      { name: "Billie Eilish", mood: "Dark Pop", x: "18%", y: "68%", d: 14 },
+      { name: "Daft Punk", mood: "Electronic House", x: "72%", y: "70%", d: 18 }
     ],
     []
   );
