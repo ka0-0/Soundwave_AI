@@ -1,5 +1,12 @@
-// Use relative path for Vite proxy - requests to /api/v1/* will be proxied to backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
+function getApiBaseUrl() {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+  if (!envUrl) return "/api/v1";
+  if (envUrl.endsWith("/api/v1")) return envUrl;
+  if (envUrl.endsWith("/api")) return `${envUrl}/v1`;
+  return `${envUrl}/api/v1`;
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 800;
 const REQUEST_TIMEOUT_MS = 10000;

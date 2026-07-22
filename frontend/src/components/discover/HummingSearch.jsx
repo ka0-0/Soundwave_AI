@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useToastStore } from "../../store/useToastStore";
+import { API_BASE_URL } from "../../utils/api";
 
 export default function HummingSearch({ onMatch }) {
   useTranslation();
@@ -28,7 +29,7 @@ export default function HummingSearch({ onMatch }) {
         formData.append("file", audioBlob, "humming.wav");
 
         try {
-          const response = await fetch("/api/v1/discover/recognize", {
+          const response = await fetch(`${API_BASE_URL}/discover/recognize`, {
             method: "POST",
             body: formData,
             headers: {
