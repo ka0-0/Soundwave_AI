@@ -540,22 +540,6 @@ export default function AmbientSongPlayer() {
                 />
               </div>
 
-              {/* Spacer pushes AI button to the right */}
-              <div className="flex-1" />
-
-              {/* AI Intelligence button */}
-              <button
-                type="button"
-                onClick={() => setShowPanel((v) => !v)}
-                className={`player-change-btn flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-all ${
-                  showPanel ? "bg-gold/20 text-gold gold-border shadow-glow" : "glass-premium text-muted hover:text-gold border border-gold/10"
-                }`}
-                aria-label="View queue"
-                aria-expanded={showPanel}
-              >
-                <Settings2 size={15} />
-                <span className="hidden md:inline uppercase tracking-widest">AI Intelligence</span>
-              </button>
             </div>
 
             {/* Pixel seek bar row */}

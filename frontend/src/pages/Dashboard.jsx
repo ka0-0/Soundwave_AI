@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, Sparkles, Music, Radio, Heart, Play, Pause, Plus, X,
   SkipForward, SkipBack, Volume2, VolumeX, Repeat, Repeat1, Shuffle,
-  TrendingUp, Calendar, Compass, Award, Search, Send, Mic, Info, History
+  TrendingUp, Calendar, Compass, Award, Search, Send, Mic, Info, History, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { usePlayerStore } from "../store/usePlayerStore";
@@ -259,12 +259,291 @@ function CompactWaveform({ accent, accentAlt, isPlaying }) {
 
 
 
+// ── Isolated Scroll Container Card ──
+function IsolatedCard({ children, className = "", ...props }) {
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const handleWheel = (e) => {
+      const scrollable = el.querySelector(".custom-scrollbar") || el;
+      if (!scrollable) return;
+
+      const isScrollableY = scrollable.scrollHeight > scrollable.clientHeight;
+      const isScrollableX = scrollable.scrollWidth > scrollable.clientWidth;
+
+      if (isScrollableY) {
+        e.preventDefault();
+        e.stopPropagation();
+        scrollable.scrollTop += e.deltaY;
+      } else if (isScrollableX) {
+        e.preventDefault();
+        e.stopPropagation();
+        scrollable.scrollLeft += e.deltaY || e.deltaX;
+      }
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  return (
+    <motion.div
+      ref={cardRef}
+      whileHover={{ y: -8, scale: 1.025 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className={`card-hover-effect cursor-pointer ${className}`}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ── Artist Spotlight Data from /artists/ directory ──
+const ARTIST_SPOTLIGHTS = [
+  { name: "Karan Aujla", img: "/artists/Karan Aujla.jpg", genre: "Punjabi Fusion & Hip-Hop", hit: "Tauba Tauba", bio: "Renowned singer, rapper, and lyricist known for chart-topping Punjabi hits and international crossover tracks.", color: "text-purple-400" },
+  { name: "Arijit Singh", img: "/artists/arijit sing pic.avif", genre: "Romantic & Soulful Ballads", hit: "Tum Hi Ho", bio: "The voice of modern Indian melody with over 100M+ global listeners across acoustic and emotional genres.", color: "text-cyan-300" },
+  { name: "Diljit Dosanjh", img: "/artists/diljit dossanjh.webp", genre: "Global Punjabi Pop & Bhangra", hit: "GOAT / Lover", bio: "Iconic performer bridging Indian folk traditions with international pop energy on Coachella and global stages.", color: "text-pink-400" },
+  { name: "Sidhu Moose Wala", img: "/artists/Sidhu-Moosewala.webp", genre: "Desi Rap & Folk Anthem", hit: "295 / Same Beef", bio: "Legendary artist whose authentic storytelling and powerful cadence redefined global Punjabi rap music.", color: "text-amber-300" },
+  { name: "Billie Eilish", img: "/artists/billie eilish.jpeg", genre: "Alternative Pop & Dark Wave", hit: "Bad Guy / Birds of a Feather", bio: "Grammy and Oscar winning pop prodigy celebrated for whispered vocals, deep bass, and avant-garde production.", color: "text-emerald-400" },
+  { name: "Eminem", img: "/artists/eminem.jpg", genre: "Hardcore Hip-Hop & Rap", hit: "Lose Yourself / Rap God", bio: "One of the best-selling music artists of all time, legendary for intricate rhyme schemes and speed delivery.", color: "text-rose-400" },
+  { name: "Guru Randhawa", img: "/artists/Guru Randhawa.jpeg", genre: "Dance Pop & High-Rated Beats", hit: "High Rated Gabru", bio: "Party anthem creator blending infectious synth beats with catchy Punjabi vocal melodies.", color: "text-fuchsia-300" },
+  { name: "Ed Sheeran", img: "/artists/ed sheeran.webp", genre: "Acoustic Pop & Folk Fusion", hit: "Shape of You / Perfect", bio: "Global acoustic sensation renowned for loop pedal solo performances and timeless romantic anthems.", color: "text-sky-300" },
+  { name: "Sonu Nigam", img: "/artists/sonu nigam pic.jpeg", genre: "Indian Classical & Playback", hit: "Kal Ho Naa Ho", bio: "Master vocalist with multi-octave range and decades of legendary playback performance across genres.", color: "text-yellow-300" },
+  { name: "Raftaar", img: "/artists/Raftaar.jpeg", genre: "Desi Hip-Hop & Producer", hit: "Swag Mera Desi", bio: "Pioneering Indian rapper and record producer known for high-octane flow and production craftsmanship.", color: "text-teal-300" },
+  { name: "Lata Mangeshkar", img: "/artists/Lata_Mangeshka.jpg", genre: "Nightingale of India", hit: "Lag Jaa Gale", bio: "Immortal cultural icon whose legendary career spanned over 7 decades and tens of thousands of songs.", color: "text-purple-300" },
+  { name: "Imagine Dragons", img: "/artists/imagine dragons.jpg", genre: "Stadium Rock & Synth Pop", hit: "Believer / Radioactive", bio: "Multi-platinum band delivering stadium-filling anthems with heavy percussion and soaring hooks.", color: "text-pink-300" },
+  { name: "Lana Del Rey", img: "/artists/lsns del rey.webp", genre: "Cinematic Baroque Pop", hit: "Video Games / Summertime Sadness", bio: "Stylistic icon known for nostalgic cinematic soundscapes, melancholic romance, and retro glamour.", color: "text-purple-400" },
+  { name: "Maroon 5", img: "/artists/maroon five.webp", genre: "Funk Pop & R&B", hit: "Sugar / Moves Like Jagger", bio: "Chart-dominating pop-rock group led by Adam Levine's soulful falsetto and groovy funk basslines.", color: "text-cyan-400" },
+  { name: "Shawn Mendes", img: "/artists/shwan mendes.jpeg", genre: "Pop Rock & Acoustic", hit: "Señorita / In My Blood", bio: "Canadian singer-songwriter known for heartfelt acoustic ballads and energetic pop melodies.", color: "text-amber-400" },
+  { name: "Talwiinder", img: "/artists/talwiinder.jpeg", genre: "Atmospheric Indie Punjabi", hit: "Khoya / Gallan4", bio: "Rising indie sensation creating dark, ambient acoustic vibes and deeply emotional vocal waves.", color: "text-emerald-300" },
+  { name: "Harrdy Sandhu", img: "/artists/Harrdy Sandhu.jpg", genre: "Punjabi Pop & Dance", hit: "Bijlee Bijlee / Kya Baat Ay", bio: "Versatile actor and hitmaker famous for infectious dance tracks and suave music video aesthetics.", color: "text-purple-400" },
+  { name: "David Kushner", img: "/artists/david kushner.jpg", genre: "Indie Folk & Deep Baritone", hit: "Daylight", bio: "Singer-songwriter known for haunting baritone vocals and cinematic acoustic storytelling.", color: "text-pink-400" }
+];
+
+// ── Music Facts & Trivia Data ──
+const MUSIC_FACTS = [
+  { fact: "Listening to music releases dopamine in the brain — the exact same pleasure chemical triggered by your favorite food.", category: "Neuroscience", icon: "🧠", color: "text-purple-400" },
+  { fact: "Your heart rate dynamically synchronizes with the rhythm and tempo of the music you are currently listening to.", category: "Human Biology", icon: "💓", color: "text-pink-400" },
+  { fact: "Loud music can cause people to drink beverages faster in shorter amounts of time due to acoustic stimulation.", category: "Acoustic Behavior", icon: "🎵", color: "text-cyan-300" },
+  { fact: "Flowers and plants actually grow faster when played soothing classical or ambient acoustic music daily.", category: "Botany & Sound", icon: "🌱", color: "text-emerald-400" },
+  { fact: "The world's longest recorded concert lasted 453 hours and 20 minutes in a single continuous performance.", category: "World Records", icon: "⏱️", color: "text-amber-300" },
+  { fact: "Astronauts in space listen to customized wake-up playlists transmitted from NASA Mission Control every morning.", category: "Cosmic Audio", icon: "🚀", color: "text-sky-300" },
+  { fact: "An earworm — a song stuck in your head — is medically referred to as Involuntary Musical Imagery (INMI).", category: "Psychology", icon: "🎧", color: "text-fuchsia-300" },
+  { fact: "Singing in a group or choir synchronizes the heartbeats of all participants to beat as a single unified rhythm.", category: "Harmony Science", icon: "🎤", color: "text-teal-300" },
+  { fact: "Monaco's national army is smaller in total size than its official national orchestra musical band.", category: "Musical Trivia", icon: "🎺", color: "text-purple-300" },
+  { fact: "Playing a musical instrument engages every single area of the human central nervous system simultaneously.", category: "Brain Power", icon: "⚡", color: "text-yellow-300" }
+];
+
+// ── Frame 1: Artists Loop Component ──
+function ArtistsLoopFrame() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % ARTIST_SPOTLIGHTS.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const artist = ARTIST_SPOTLIGHTS[currentIndex];
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % ARTIST_SPOTLIGHTS.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + ARTIST_SPOTLIGHTS.length) % ARTIST_SPOTLIGHTS.length);
+  };
+
+  return (
+    <IsolatedCard className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[390px] flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-pink-300">Creator Spotlight</p>
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={artist.name}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 0.4 }}
+            className="mt-4 flex items-center gap-5"
+          >
+            {/* Larger Artist Photo */}
+            <div className="w-28 h-28 rounded-2xl overflow-hidden relative shrink-0 border-2 border-purple-500/40 shadow-2xl group">
+              <img
+                src={artist.img}
+                alt={artist.name}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            </div>
+
+            {/* Larger Artist Info */}
+            <div className="min-w-0 flex-1">
+              <span className={`inline-block text-xs font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 ${artist.color}`}>
+                {artist.genre}
+              </span>
+              <h3 className="text-display text-2xl md:text-3xl font-black text-white truncate mt-1.5">{artist.name}</h3>
+              <p className="text-xs md:text-sm text-cyan-300 font-extrabold truncate mt-1">Top Hit: <span className="text-purple-300">"{artist.hit}"</span></p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="mt-4 bg-white/[0.04] border border-white/10 rounded-xl p-4 flex-1 overflow-y-auto custom-scrollbar overscroll-contain">
+        <p className="text-sm md:text-base !text-white font-bold leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">{artist.bio}</p>
+      </div>
+    </IsolatedCard>
+  );
+}
+
+// ── Frame 2: Music Facts Hub Component ──
+function MusicFactsFrame() {
+  const [factIndex, setFactIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFactIndex((prev) => (prev + 1) % MUSIC_FACTS.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentFact = MUSIC_FACTS[factIndex];
+
+  const handleShuffle = () => {
+    let nextIdx = Math.floor(Math.random() * MUSIC_FACTS.length);
+    if (nextIdx === factIndex) nextIdx = (factIndex + 1) % MUSIC_FACTS.length;
+    setFactIndex(nextIdx);
+  };
+
+  return (
+    <IsolatedCard className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[390px] flex flex-col justify-between bg-gradient-to-br from-violet-950/20 via-black/40 to-cyan-950/20">
+      <div>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-cyan-300">Acoustic Insights</p>
+          <button
+            onClick={handleShuffle}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all"
+          >
+            <Sparkles size={12} /> Shuffle Fact
+          </button>
+        </div>
+        <h3 className="text-display text-xl font-black text-white tracking-wide mt-1.5">Music Facts <span className="text-purple-400">& Trivia</span></h3>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={factIndex}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.35 }}
+          className="my-auto space-y-3"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">{currentFact.icon}</span>
+            <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/5 border border-white/10 ${currentFact.color}`}>
+              {currentFact.category}
+            </span>
+          </div>
+
+          <div className="bg-white/[0.04] border border-white/10 rounded-xl p-4 shadow-inner">
+            <p className="text-sm md:text-base font-extrabold !text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+              "{currentFact.fact}"
+            </p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="flex items-center justify-between border-t border-white/10 pt-3.5 mt-2">
+        <span className="text-xs text-purple-300 uppercase tracking-widest font-extrabold">ACOUSTIC KNOWLEDGE NODE</span>
+        <span className="text-xs font-bold text-cyan-300">FACT {factIndex + 1} OF {MUSIC_FACTS.length}</span>
+      </div>
+    </IsolatedCard>
+  );
+}
+
+// ── Fixed Online Global Top Played Songs Registry (Rotates at 12:00 AM Midnight Every Day) ──
+const DAILY_FEATURED_SONGS = [
+  {
+    id: "daily-1",
+    title: "Blinding Lights",
+    artist: "The Weeknd",
+    cover_url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[0]?.src,
+    match: "99.8%",
+    genre: "Synthwave / Pop"
+  },
+  {
+    id: "daily-2",
+    title: "Starboy",
+    artist: "The Weeknd ft. Daft Punk",
+    cover_url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[1]?.src,
+    match: "99.4%",
+    genre: "Electro Pop"
+  },
+  {
+    id: "daily-3",
+    title: "As It Was",
+    artist: "Harry Styles",
+    cover_url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[2]?.src,
+    match: "99.1%",
+    genre: "Indie Pop / Synth"
+  },
+  {
+    id: "daily-4",
+    title: "Levitating",
+    artist: "Dua Lipa",
+    cover_url: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[3]?.src,
+    match: "98.9%",
+    genre: "Nu-Disco / Pop"
+  },
+  {
+    id: "daily-5",
+    title: "Cruel Summer",
+    artist: "Taylor Swift",
+    cover_url: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[4]?.src,
+    match: "99.6%",
+    genre: "Synth Pop / Anthem"
+  },
+  {
+    id: "daily-6",
+    title: "Sunflower",
+    artist: "Post Malone & Swae Lee",
+    cover_url: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[5]?.src,
+    match: "99.2%",
+    genre: "Melodic Hip-Hop"
+  },
+  {
+    id: "daily-7",
+    title: "Stay",
+    artist: "The Kid LAROI & Justin Bieber",
+    cover_url: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=400&auto=format&fit=crop",
+    src: PLAYER_TRACKS[6]?.src,
+    match: "98.7%",
+    genre: "Pop Rock / Synth"
+  }
+];
+
 // ── Main Redesigned Dashboard Page ──
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const pushToast = useToastStore((s) => s.push);
   const { toggle, isFavourite } = useFavouritesStore();
   const favouriteIds = useFavouritesStore((s) => s.favouriteIds);
+  const favouriteTracks = useFavouritesStore((s) => s.favouriteTracks);
 
   // Player state
   const {
@@ -297,6 +576,35 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  // Auto-close search results on outside click or scroll
+  useEffect(() => {
+    const isSearchActive = searchLoading || searchResults.length > 0;
+    if (!isSearchActive) return;
+
+    const handleOutsideClick = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setSearchResults([]);
+        setSearchQuery("");
+      }
+    };
+
+    const handleScroll = () => {
+      setSearchResults([]);
+      setSearchQuery("");
+    };
+
+    window.addEventListener("pointerdown", handleOutsideClick);
+    window.addEventListener("touchstart", handleOutsideClick);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", handleOutsideClick);
+      window.removeEventListener("touchstart", handleOutsideClick);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [searchLoading, searchResults.length]);
 
   const handleSearch = async (queryStr) => {
     if (!queryStr.trim()) return;
@@ -390,6 +698,12 @@ export default function Dashboard() {
   const greetingHour = new Date().getHours();
   const greetingText = greetingHour < 12 ? "Good morning" : greetingHour < 18 ? "Good afternoon" : "Good evening";
 
+  const todayDate = new Date();
+  const startOfYear = new Date(todayDate.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((todayDate - startOfYear) / (1000 * 60 * 60 * 24));
+  const topSongOfDay = DAILY_FEATURED_SONGS[dayOfYear % DAILY_FEATURED_SONGS.length];
+  const todayDateStr = todayDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
   const totalSongs = analyticsData?.total_tracks || 46;
   const listeningHours = Math.round((analyticsData?.total_minutes || 377) / 60 * 10) / 10;
   const streakDays = 7;
@@ -415,9 +729,10 @@ export default function Dashboard() {
     setTilt({ x: 0, y: 0 });
   };
 
-  // Liked songs display (intersect with queue songs to get cover metadata)
-  const likedSongsList = queue.filter(t => favouriteIds.has(t.id));
-  const fallbackLikedSongs = likedSongsList.length > 0 ? likedSongsList : queue.slice(0, 4);
+  // Liked songs display (from persistent store or matched queue items)
+  const userLikedSongs = (favouriteTracks && favouriteTracks.length > 0)
+    ? favouriteTracks
+    : queue.filter(t => favouriteIds.has(t.id));
 
   return (
     <div className="relative min-h-screen pb-28 pt-8 px-4 md:px-12 overflow-x-hidden font-sans">
@@ -475,8 +790,8 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* Neural Transceiver Search Input */}
-            <div className="relative w-full lg:max-w-md mt-1 z-20">
+            {/* Neural Transceiver Search Input & Below-Search Results Dropdown */}
+            <div ref={searchContainerRef} className="relative w-full lg:max-w-md mt-1 z-30">
               <input
                 type="text"
                 placeholder="Search tracks, artists, or moods..."
@@ -485,40 +800,135 @@ export default function Dashboard() {
                 onKeyDown={(e) => e.key === "Enter" && handleSearch(searchQuery)}
                 className="w-full bg-white/[0.04] border border-white/10 hover:border-white/20 focus:border-cyan-500/50 rounded-full py-2.5 pl-10 pr-24 text-xs text-white placeholder-zinc-500 focus:outline-none transition-all"
               />
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
               <button
                 onClick={() => handleSearch(searchQuery)}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white text-black hover:bg-zinc-200 transition-colors font-bold text-[9px] uppercase tracking-wider px-3.5 py-1.5 rounded-full"
               >
                 {searchLoading ? "Scanning..." : "Search"}
               </button>
+
+              {/* Search results dropdown panel appearing directly below the search box */}
+              <AnimatePresence>
+                {(searchLoading || searchResults.length > 0) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                    transition={{ duration: 0.25 }}
+                    className="absolute left-0 right-0 top-full mt-3 w-full z-50 p-5 rounded-3xl glass-premium gold-border border border-cyan-500/30 shadow-[0_32px_128px_rgba(0,0,0,0.95)]"
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                        <h3 className="text-xs font-black text-white uppercase tracking-wider">Search Results</h3>
+                      </div>
+                      <button
+                        onClick={() => { setSearchResults([]); setSearchQuery(""); }}
+                        className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-muted hover:text-white transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    {searchLoading ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <div className="w-6 h-6 border-2 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mb-2" />
+                        <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest animate-pulse">Scanning Neural Grids...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+                        {searchResults.map((item, idx) => (
+                          <div key={item.id || idx} className="flex gap-3 items-center p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/25 hover:bg-white/[0.04] transition-all group">
+                            <button
+                              onClick={() => handlePlaySearchResult(item)}
+                              className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 group-hover:bg-cyan-500 group-hover:text-black transition-colors"
+                            >
+                              <Play size={10} fill="currentColor" />
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-white truncate leading-tight">{item.title}</p>
+                              <p className="text-[9px] text-muted truncate mt-0.5">{item.artist}</p>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0">
+                              <button
+                                onClick={() => toggle(item)}
+                                className="p-1.5 rounded hover:bg-white/5 text-muted hover:text-pink-400 transition-colors"
+                              >
+                                <Heart size={12} fill={isFavourite(item.id) ? "#ec4899" : "none"} stroke={isFavourite(item.id) ? "#ec4899" : "currentColor"} />
+                              </button>
+                              <button
+                                onClick={() => handleQueueSong(item)}
+                                className="p-1.5 rounded hover:bg-white/5 text-muted hover:text-cyan-400 transition-colors"
+                                title="Add to queue"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Compact Listening Statistics Strip */}
+            {/* TOP PLAYED SONG OF THE DAY Recommendation Bar */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="glass-premium gold-border rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-x-6 gap-y-3 items-center justify-between border border-white/5 w-full"
+              className={`glass-premium gold-border rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-cyan-500/20 bg-gradient-to-r from-violet-950/40 via-purple-900/20 to-cyan-950/30 w-full shadow-lg transition-all duration-300 ${
+                (searchLoading || searchResults.length > 0) ? "pointer-events-none opacity-40 blur-[1px]" : ""
+              }`}
             >
-              <div className="min-w-0">
-                <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Total Songs</p>
-                <p className="text-sm font-black text-white mt-0.5">{totalSongs} tracks</p>
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                {/* Album Thumbnail */}
+                <div className="w-12 h-12 rounded-xl overflow-hidden relative shrink-0 border border-white/10 shadow-md">
+                  <img
+                    src={topSongOfDay.cover_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop"}
+                    alt={topSongOfDay.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/20" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <Sparkles size={10} className="text-amber-400" /> TOP PLAYED SONG OF THE DAY
+                    </span>
+                    <span className="text-[9px] text-pink-400 font-bold uppercase tracking-wider">• {todayDateStr}</span>
+                  </div>
+
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <h4 className="text-sm font-black text-white truncate">{topSongOfDay.title}</h4>
+                    <span className="text-xs text-cyan-300 font-bold truncate">by {topSongOfDay.artist}</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-300 mt-0.5 truncate">
+                    Highest frequency recommendation today • <span className="text-emerald-400 font-extrabold">99.4% Cosmic Match</span>
+                  </p>
+                </div>
               </div>
-              <div className="h-6 w-px bg-white/5 hidden lg:block animate-pulse" />
-              <div className="min-w-0">
-                <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Listening Time</p>
-                <p className="text-sm font-black text-cyan-300 mt-0.5">{listeningHours} hrs</p>
-              </div>
-              <div className="h-6 w-px bg-white/5 hidden lg:block animate-pulse" />
-              <div className="min-w-0">
-                <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Active Streak</p>
-                <p className="text-sm font-black text-pink-400 mt-0.5">🔥 {streakDays} days</p>
-              </div>
-              <div className="h-6 w-px bg-white/5 hidden lg:block animate-pulse" />
-              <div className="min-w-0">
-                <p className="text-[8px] font-extrabold text-muted uppercase tracking-widest">Dominant Mood</p>
-                <p className="text-sm font-black text-violet-300 mt-0.5 truncate">{dominantMood}</p>
+
+              {/* Quick Play Actions */}
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => handlePlaySearchResult(topSongOfDay)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full font-black text-xs bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white hover:scale-105 transition-all shadow-md"
+                >
+                  <Play size={12} fill="currentColor" />
+                  PLAY TODAY'S SONG
+                </button>
+                <button
+                  onClick={() => handleQueueSong(topSongOfDay)}
+                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-cyan-300 border border-white/10 transition-colors"
+                  title="Add to queue"
+                >
+                  <Plus size={14} />
+                </button>
               </div>
             </motion.div>
 
@@ -667,19 +1077,19 @@ export default function Dashboard() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           
           {/* Section 1: Most Played Songs (Actionable List) */}
-          <div className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[340px] flex flex-col justify-between">
+          <IsolatedCard className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[390px] flex flex-col justify-between">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-cyan-300">Popular Coordinates</p>
-              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">Most Played</h3>
-              <p className="text-xs text-muted mt-1 leading-relaxed">Your highest frequency tracks in the current cycle.</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-purple-300">Popular Coordinates</p>
+              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">Most <span className="text-purple-400">Played</span></h3>
+              <p className="text-xs text-muted mt-1 leading-relaxed">Your highest frequency <span className="text-purple-300">tracks</span> in the current cycle.</p>
             </div>
 
-            <div className="mt-4 space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-              {queue.slice(0, 4).map((item, idx) => (
-                <div key={item.id || idx} className="flex gap-3 items-center p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/25 hover:bg-white/[0.04] transition-all group">
+            <div className="mt-4 space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
+              {(queue && queue.length >= 6 ? queue : [...queue, ...userLikedSongs]).map((item, idx) => (
+                <div key={item.id || idx} className="flex gap-3 items-center p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-purple-500/35 hover:bg-white/[0.04] transition-all group">
                   <button
                     onClick={() => handlePlaySong(item.title)}
-                    className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 group-hover:bg-cyan-500 group-hover:text-black transition-colors"
+                    className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 group-hover:bg-purple-500 group-hover:text-black transition-colors"
                   >
                     <Play size={10} fill="currentColor" />
                   </button>
@@ -696,7 +1106,7 @@ export default function Dashboard() {
                     </button>
                     <button
                       onClick={() => handleQueueSong(item)}
-                      className="p-1.5 rounded hover:bg-white/5 text-muted hover:text-cyan-400 transition-colors"
+                      className="p-1.5 rounded hover:bg-white/5 text-muted hover:text-purple-300 transition-colors"
                       title="Add to queue"
                     >
                       <Plus size={12} />
@@ -705,77 +1115,88 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          </div>
+          </IsolatedCard>
 
           {/* Section 2: Liked Songs Horizontal Slider */}
-          <div className="glass-premium gold-border rounded-2xl p-6 flex flex-col justify-between h-[340px] overflow-hidden">
+          <IsolatedCard className="glass-premium gold-border rounded-2xl p-6 flex flex-col justify-between h-[390px] overflow-hidden">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-pink-300">Your Vault</p>
-              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">Liked Songs</h3>
-              <p className="text-xs text-muted mt-1 leading-relaxed">Your personal acoustic inventory. Swipe to play.</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-pink-300">Your Vault</p>
+              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">Liked <span className="text-purple-400">Songs</span></h3>
+              <p className="text-xs text-muted mt-1 leading-relaxed">Your personal <span className="text-purple-300">acoustic inventory</span>. Swipe to play.</p>
             </div>
 
-            <div className="flex gap-4 overflow-x-auto py-4 pr-2 custom-scrollbar flex-1 items-center">
-              {fallbackLikedSongs.map((track) => (
-                <motion.div
-                  key={track.id}
-                  whileHover={{ scale: 1.06, y: -4 }}
-                  className="flex-shrink-0 w-28 aspect-square rounded-xl overflow-hidden relative group cursor-pointer border border-white/5 shadow-lg"
-                  onClick={() => handlePlaySong(track.title)}
-                >
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${track.cover_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&auto=format&fit=crop"})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10" />
+            <div className="flex gap-4 overflow-x-auto py-4 pr-2 custom-scrollbar overscroll-contain flex-1 items-center">
+              {userLikedSongs && userLikedSongs.length > 0 ? (
+                userLikedSongs.map((track) => (
+                  <motion.div
+                    key={track.id || track.track_id}
+                    whileHover={{ scale: 1.06, y: -4 }}
+                    className="flex-shrink-0 w-28 aspect-square rounded-xl overflow-hidden relative group cursor-pointer border border-white/5 shadow-lg"
+                    onClick={() => handlePlaySearchResult(track)}
+                  >
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                      style={{ backgroundImage: `url(${track.cover_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&auto=format&fit=crop"})` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10" />
 
-                  {/* Liked quick play */}
-                  <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 bg-black/45 transition-opacity flex flex-col justify-between p-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggle(track); }}
-                      className="p-1 rounded bg-black/30 self-end text-pink-400 hover:text-white transition-colors"
-                      title="Unlike"
-                    >
-                      <Heart size={10} fill="currentColor" />
-                    </button>
-
-                    <div className="flex items-center justify-between mt-auto">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-black text-white truncate leading-none">{track.title}</p>
-                        <p className="text-[7px] text-muted truncate mt-0.5">{track.artist}</p>
-                      </div>
-                      <div
-                        style={{ background: track.accent || "#fff" }}
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-black shadow-md shrink-0"
+                    {/* Liked quick play */}
+                    <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 bg-black/45 transition-opacity flex flex-col justify-between p-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggle(track); }}
+                        className="p-1 rounded bg-black/30 self-end text-pink-400 hover:text-white transition-colors"
+                        title="Unlike"
                       >
-                        <Play size={8} fill="currentColor" />
+                        <Heart size={10} fill="#ec4899" />
+                      </button>
+
+                      <div className="flex items-center justify-between mt-auto">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[9px] font-black text-white truncate leading-none">{track.title}</p>
+                          <p className="text-[7px] text-muted truncate mt-0.5">{track.artist}</p>
+                        </div>
+                        <div
+                          style={{ background: track.accent || "#a855f7" }}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-black shadow-md shrink-0"
+                        >
+                          <Play size={8} fill="currentColor" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              ) : (
+                <div className="w-full text-center py-6 px-4 rounded-xl bg-white/[0.02] border border-white/5">
+                  <Heart className="w-6 h-6 text-pink-500/50 mx-auto mb-2 animate-pulse" />
+                  <p className="text-xs font-bold text-white">No liked songs in your vault yet</p>
+                  <p className="text-[10px] text-zinc-400 mt-1">Click the heart icon on any track to save it here!</p>
+                </div>
+              )}
             </div>
-          </div>
+          </IsolatedCard>
 
           {/* Section 3: Listening Story (timeline) */}
-          <div className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[340px] flex flex-col justify-between">
+          <IsolatedCard className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[390px] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-pink-300">Telemetry History</p>
+                <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-pink-300">Telemetry History</p>
                 <TrendingUp className="text-pink-400 w-4 h-4" />
               </div>
-              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">Listening Story</h3>
-              <p className="text-xs text-muted mt-1 leading-relaxed">Your chronological listening coordinates this week.</p>
+              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">Listening <span className="text-purple-400">Story</span></h3>
+              <p className="text-xs text-muted mt-1 leading-relaxed">Your chronological <span className="text-purple-300">listening coordinates</span> this week.</p>
             </div>
 
-            <div className="mt-4 space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="mt-4 space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
               {[
                 { title: "First Cosmic Alignment", desc: "Your coordinates synchronized with Dhurandhar for the first time.", date: "Today", mood: "Romantic flow" },
                 { title: "Midnight Vibe Active", desc: "Tuesday energy peaked with Fortuner, driving a 75-minute productivity orbit.", date: "June 10", mood: "Desi energy" },
-                { title: "Nostalgia Frequency Active", desc: "Nostalgia reached 92% during Kitaab's chill wave.", date: "June 08", mood: "Chill wave" }
-              ].map((m, idx) => (
+                { title: "Nostalgia Frequency Active", desc: "Nostalgia reached 92% during Kitaab's chill wave.", date: "June 08", mood: "Chill wave" },
+                { title: "Quantum Pulse Resonance", desc: "Deep focus session achieved with Bairan frequency flow.", date: "June 05", mood: "Deep focus" },
+                { title: "Acoustic Aura Shift", desc: "Energy state shifted to Euphoria during Jat Jatni playback.", date: "June 03", mood: "High Energy" },
+                { title: "Starlight Orbit Complete", desc: "32 tracks played in continuous listening vortex.", date: "May 29", mood: "Starlight Flow" }
+              ].map((m, idx, arr) => (
                 <div key={idx} className="flex gap-4 items-start relative group">
-                  {idx < 2 && (
+                  {idx < arr.length - 1 && (
                     <div className="absolute left-[8px] top-[16px] bottom-[-22px] w-0.5 bg-gradient-to-b from-pink-500/20 to-violet-500/5" />
                   )}
                   <div className="w-4 h-4 rounded-full bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-[8px] text-pink-300 shrink-0 mt-0.5 z-10">
@@ -794,33 +1215,33 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          </div>
+          </IsolatedCard>
 
           {/* Section 4: AI Recommendations (Dynamic Personalized Queue) */}
-          <div className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[340px] flex flex-col justify-between">
+          <IsolatedCard className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 h-[390px] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-cyan-300">Vibe Generator</p>
-                <Sparkles className="text-cyan-400 w-4 h-4 animate-spin-slow" />
+                <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-purple-300">Vibe Generator</p>
+                <Sparkles className="text-purple-400 w-4 h-4 animate-spin-slow" />
               </div>
-              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">AI Recommendations</h3>
-              <p className="text-xs text-muted mt-1 leading-relaxed">Personalized recommendations based on your listening streak.</p>
+              <h3 className="text-display text-lg font-black text-white tracking-wide mt-1">AI <span className="text-purple-400">Recommendations</span></h3>
+              <p className="text-xs text-muted mt-1 leading-relaxed">Personalized <span className="text-purple-300 font-extrabold">recommendations</span> based on your listening streak.</p>
             </div>
 
-            <div className="mt-4 space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-              {aiDjQueue.slice(0, 3).map((item, idx) => (
+            <div className="mt-4 space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
+              {(aiDjQueue && aiDjQueue.length > 0 ? aiDjQueue : (userLikedSongs.length > 0 ? userLikedSongs : queue.slice(0, 4))).map((item, idx) => (
                 <div
                   key={idx}
                   onClick={() => handlePlaySearchResult(item)}
-                  className="rounded-xl p-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-500/35 transition-all cursor-pointer flex items-center gap-3 group"
+                  className="rounded-xl p-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-purple-500/35 transition-all cursor-pointer flex items-center gap-3 group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 group-hover:bg-cyan-500 group-hover:text-black transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 group-hover:bg-purple-500 group-hover:text-black transition-colors">
                     <Play size={11} fill="currentColor" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex justify-between items-center gap-1.5">
                       <p className="text-xs font-black text-white truncate">{item.title || item.name}</p>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30 shrink-0">
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40 shrink-0">
                         {Math.round((item.confidence_score || 0.85) * 100)}%
                       </span>
                     </div>
@@ -828,7 +1249,7 @@ export default function Dashboard() {
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleQueueSong(item); }}
-                    className="p-1.5 text-muted hover:text-cyan-400 transition-colors shrink-0"
+                    className="p-1.5 text-muted hover:text-purple-300 transition-colors shrink-0"
                     title="Add to queue"
                   >
                     <Plus size={12} />
@@ -836,9 +1257,15 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          </div>
+          </IsolatedCard>
 
-          {/* Section 5: Creator of the Month Spotlight (Span full columns in wide view) */}
+          {/* Section 5: Creator Spotlight Frame (Loops images from /artists/) */}
+          <ArtistsLoopFrame />
+
+          {/* Section 6: Music Facts & Trivia Frame */}
+          <MusicFactsFrame />
+
+          {/* Section 7: Creator of the Month Spotlight (Span full columns in wide view) */}
           <div className="md:col-span-2 lg:col-span-3">
             <div className="relative overflow-hidden rounded-2xl glass-premium gold-border p-6 min-h-[280px] flex flex-col justify-between text-white bg-gradient-to-tr from-violet-950/20 via-black/40 to-black/95">
               <div className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none"
@@ -888,70 +1315,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Search results spotlight overlay (similar to Discover) */}
-      <AnimatePresence>
-        {(searchLoading || searchResults.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            className="fixed left-4 right-4 md:left-auto md:right-12 top-24 z-50 md:w-[480px] p-6 rounded-3xl glass-premium gold-border border border-cyan-500/20 shadow-[0_32px_128px_rgba(0,0,0,0.95)]"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">Search Results</h3>
-              </div>
-              <button
-                onClick={() => { setSearchResults([]); setSearchQuery(""); }}
-                className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-muted hover:text-white transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
 
-            {searchLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mb-3" />
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest animate-pulse">Scanning Neural Grids...</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
-                {searchResults.map((item, idx) => (
-                  <div key={item.id || idx} className="flex gap-3 items-center p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/25 hover:bg-white/[0.04] transition-all group">
-                    <button
-                      onClick={() => handlePlaySearchResult(item)}
-                      className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 group-hover:bg-cyan-500 group-hover:text-black transition-colors"
-                    >
-                      <Play size={10} fill="currentColor" />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate leading-tight">{item.title}</p>
-                      <p className="text-[9px] text-muted truncate mt-0.5">{item.artist}</p>
-                    </div>
-                    <div className="flex gap-1.5 shrink-0">
-                      <button
-                        onClick={() => toggle(item)}
-                        className="p-1.5 rounded hover:bg-white/5 text-muted hover:text-pink-400 transition-colors"
-                      >
-                        <Heart size={12} fill={isFavourite(item.id) ? "#ec4899" : "none"} stroke={isFavourite(item.id) ? "#ec4899" : "currentColor"} />
-                      </button>
-                      <button
-                        onClick={() => handleQueueSong(item)}
-                        className="p-1.5 rounded hover:bg-white/5 text-muted hover:text-cyan-400 transition-colors"
-                        title="Add to queue"
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

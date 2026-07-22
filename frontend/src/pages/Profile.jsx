@@ -140,16 +140,16 @@ export default function Profile() {
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 pb-20">
       <header className="flex justify-between items-end">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted">{t("common.profile")}</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-purple-300">{t("common.profile")}</p>
           <motion.h1
-            className="text-display mt-2 text-4xl font-bold md:text-5xl transition-all duration-300"
+            className="text-display mt-2 text-4xl font-black md:text-5xl transition-all duration-300 text-white"
             style={{
               textShadow: isPlaying
                 ? `0 0 24px ${rgbaHex(track.accent, 0.65)}`
                 : "none"
             }}
           >
-            {isEditing ? "Editing Persona" : user?.full_name || user?.username}
+            {isEditing ? "Editing Persona" : <>{user?.full_name || user?.username} <span className="text-purple-400 font-extrabold">• Persona</span></>}
           </motion.h1>
         </div>
         <Button 

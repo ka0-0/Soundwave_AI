@@ -178,6 +178,7 @@ export default function Library() {
 
   // Favourites store
   const favouriteIds = useFavouritesStore((s) => s.favouriteIds);
+  const favouriteTracks = useFavouritesStore((s) => s.favouriteTracks);
   const isFavourite = useFavouritesStore((s) => s.isFavourite);
   const toggleFavourite = useFavouritesStore((s) => s.toggle);
 
@@ -303,6 +304,9 @@ export default function Library() {
 
   // Merge them by ID to avoid duplicates
   const likedSongsMap = new Map();
+  (favouriteTracks || []).map(normalizeTrack).filter(Boolean).forEach(track => {
+    if (track && track.id) likedSongsMap.set(track.id, track);
+  });
   bootstrapLikes.forEach(track => {
     if (track && track.id) likedSongsMap.set(track.id, track);
   });
@@ -443,14 +447,14 @@ export default function Library() {
         {/* HEADER DECK */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-2 border-b border-white/5">
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.3em]" style={{ color: accent }}>
+            <p className="text-xs font-extrabold uppercase tracking-[0.3em] text-purple-300">
               Your Music Inventory
             </p>
             <h1 className="text-4xl md:text-5xl font-black text-display tracking-tight text-white mt-1">
-              Your music library
+              Your music <span className="text-purple-400">library</span>
             </h1>
             <p className="text-xs text-muted mt-2">
-              Syncing local tracks, favorited coordinates, and neural listening telemetry.
+              Syncing <span className="text-purple-300 font-bold">local tracks</span>, favorited coordinates, and <span className="text-purple-400 font-bold">neural listening telemetry</span>.
             </p>
           </div>
 

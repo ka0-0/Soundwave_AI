@@ -1,23 +1,18 @@
 import { motion } from "framer-motion";
 import logoSrc from "./logon.jpeg";
 
-const placeholderLogo = "https://placehold.co/400x400/020204/c5a059?text=SoundWave+AI";
-
-export default function Logo({ className = "h-8", animate = true }) {
-<img src={logoSrc} alt="SoundWave AI" />;
-
+export default function Logo({ className = "h-9", animate = true }) {
   const logoVariants = {
-    initial: { opacity: 0, scale: 0.9, filter: "brightness(0) saturate(100%)" },
+    initial: { opacity: 0, scale: 0.9 },
     animate: { 
       opacity: 1, 
       scale: 1,
-      filter: "brightness(1) saturate(100%)",
-      transition: { duration: 1, ease: "easeOut" }
+      transition: { duration: 0.6, ease: "easeOut" }
     },
     hover: { 
       scale: 1.08,
-      filter: "drop-shadow(0 0 20px rgba(197, 160, 89, 0.8)) brightness(1.1)",
-      transition: { duration: 0.4, ease: "backOut" }
+      filter: "drop-shadow(0 0 22px rgba(168, 85, 247, 0.85)) brightness(1.1)",
+      transition: { duration: 0.35, ease: "backOut" }
     }
   };
 
@@ -29,16 +24,16 @@ export default function Logo({ className = "h-8", animate = true }) {
       whileHover="hover"
       className={`relative inline-flex items-center justify-center overflow-visible ${className}`}
     >
-      {/* Subtle Glow Layer */}
+      {/* Subtle Purple Glow Layer */}
       {animate && (
         <motion.div 
-          className="absolute inset-0 -z-10 bg-gold/10 blur-2xl rounded-full"
+          className="absolute inset-0 -z-10 bg-purple-600/25 blur-xl rounded-full pointer-events-none"
           animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
+            scale: [1, 1.25, 1],
+            opacity: [0.35, 0.7, 0.35],
           }}
           transition={{
-            duration: 4,
+            duration: 3.5,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -48,11 +43,7 @@ export default function Logo({ className = "h-8", animate = true }) {
       <img
         src={logoSrc}
         alt="SoundWave AI Logo"
-        className="h-full w-auto object-contain max-w-full pointer-events-none select-none drop-shadow-2xl"
-        onError={(e) => {
-          e.target.src = placeholderLogo;
-          e.target.onerror = null;
-        }}
+        className="h-full w-auto object-contain max-w-full rounded-xl pointer-events-none select-none drop-shadow-2xl"
       />
     </motion.div>
   );

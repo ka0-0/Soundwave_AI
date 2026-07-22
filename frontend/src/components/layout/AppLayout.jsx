@@ -8,6 +8,7 @@ import { usePreferencesStore } from "../../store/usePreferencesStore";
 import { apiPostNoBody } from "../../utils/api";
 
 import Logo from "../ui/Logo";
+import MusicFooter from "./MusicFooter";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -225,36 +226,19 @@ export default function AppLayout({ children }) {
         </aside>
       </div>
 
-      <div className="app-content relative z-10 ml-0 min-h-screen transition-all duration-300">
-        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-white/5 bg-[var(--bg-void)]/90 px-4 py-2 backdrop-blur-md">
-          {/* Mobile hamburger menu trigger */}
-          <button
-            type="button"
-            className="lg:hidden flex items-center justify-center p-2 rounded-xl text-muted hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-gold/50"
-            style={{ width: 44, height: 44 }}
-            onClick={() => setIsMobileDrawerOpen(true)}
-            aria-label="Open menu"
-          >
-            <Menu size={20} />
-          </button>
+      <div className="app-content relative z-10 ml-0 min-h-screen transition-all duration-300 flex flex-col justify-between">
+        {/* Floating Mobile Menu Button */}
+        <button
+          type="button"
+          className="lg:hidden fixed top-4 left-4 z-40 flex items-center justify-center p-2.5 rounded-full bg-black/70 border border-purple-500/30 text-white backdrop-blur-md shadow-xl"
+          onClick={() => setIsMobileDrawerOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu size={18} />
+        </button>
 
-          <div className="flex items-center gap-2 ml-auto">
-            {isOffline && (
-              <span className="rounded-full bg-gold/20 px-3 py-1 text-xs text-gold">Offline — showing cached data</span>
-            )}
-
-            <button
-              type="button"
-              onClick={cycleTheme}
-              className="theme-select rounded-lg p-2 flex items-center justify-center"
-              style={{ width: 44, height: 44 }}
-              aria-label="Toggle theme"
-            >
-              <ThemeIcon size={18} />
-            </button>
-          </div>
-        </header>
-        <main className="app-main min-w-0 p-4 md:p-6">{children}</main>
+        <main className="app-main min-w-0 p-4 md:p-6 flex-1">{children}</main>
+        <MusicFooter />
       </div>
     </div>
   );

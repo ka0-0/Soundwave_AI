@@ -475,17 +475,17 @@ export default function Player() {
         }}
       />
 
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">Now playing</p>
+      <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-purple-300">Now playing</p>
       <motion.h1
         key={track.title}
-        className="text-display mt-2 text-4xl font-bold md:text-5xl tracking-tight"
+        className="text-display mt-2 text-4xl font-black md:text-5xl tracking-tight text-white"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {track.title}
       </motion.h1>
       <p className="mt-2 text-secondary font-medium">
-        {track.artist} · <span className="transition-colors duration-500" style={{ color: track.accent }}>{track.mood}</span>
+        <span className="text-purple-400 font-bold">{track.artist}</span> · <span className="transition-colors duration-500 text-purple-300 font-extrabold">{track.mood}</span>
       </p>
 
       {/* Cyber Console Card container */}

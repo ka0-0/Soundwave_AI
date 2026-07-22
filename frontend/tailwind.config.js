@@ -18,8 +18,9 @@ export default {
         muted: "var(--text-muted)"
       },
       fontFamily: {
-        display: ["Syne", "Inter", "sans-serif"],
-        body: ["Inter", "DM Sans", "sans-serif"],
+        display: ["Rowdies", "sans-serif"],
+        body: ["Rowdies", "sans-serif"],
+        sans: ["Rowdies", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"]
       },
       borderRadius: {

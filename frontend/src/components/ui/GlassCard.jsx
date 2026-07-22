@@ -18,11 +18,11 @@ export default function GlassCard({
         interactive
           ? { 
               y: -8, 
-              scale: 1.02,
-              rotateX: 2,
-              rotateY: -2,
-              boxShadow: "0 48px 96px rgba(0,0,0,0.5), 0 0 20px rgba(197,160,89,0.2)",
-              borderColor: "rgba(197,160,89,0.4)"
+              scale: 1.025,
+              rotateX: 1,
+              rotateY: -1,
+              boxShadow: "0 32px 80px rgba(0,0,0,0.7), 0 0 40px rgba(168,85,247,0.45), 0 0 20px rgba(244,114,182,0.3)",
+              borderColor: "rgba(192,132,252,0.65)"
             }
           : undefined
       }

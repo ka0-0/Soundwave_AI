@@ -2,15 +2,62 @@ import { create } from "zustand";
 import { apiPost } from "../utils/api";
 import { useWorkspaceStore } from "./useWorkspaceStore";
 
+function loadStoredFavorites() {
+  if (typeof window === "undefined") return { ids: new Set(), tracks: [] };
+  try {
+    const raw = localStorage.getItem("soundwave_liked_tracks");
+    if (raw) {
+      const tracks = JSON.parse(raw);
+      if (Array.isArray(tracks) && tracks.length > 0) {
+        const ids = new Set(tracks.map((t) => t.id || t.track_id || t._id).filter(Boolean));
+        return { ids, tracks };
+      }
+    }
+  } catch (e) {
+    console.error("[FavouritesStore] Failed to load stored favorites", e);
+  }
+  return { ids: new Set(), tracks: [] };
+}
+
+function saveStoredFavorites(tracks) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("soundwave_liked_tracks", JSON.stringify(tracks));
+  } catch (e) {
+    console.error("[FavouritesStore] Failed to save favorites to localStorage", e);
+  }
+}
+
+const initialData = loadStoredFavorites();
+
 export const useFavouritesStore = create((set, get) => ({
-  favouriteIds: new Set(),
+  favouriteIds: initialData.ids,
+  favouriteTracks: initialData.tracks,
   pending: new Set(),
 
   hydrate: (favorites = []) => {
-    const ids = new Set(
-      favorites.map((f) => f.track_id || f.track_data?.id).filter(Boolean)
-    );
-    set({ favouriteIds: ids });
+    if (!Array.isArray(favorites)) return;
+    const tracksMap = new Map();
+
+    // Retain existing local liked tracks first
+    (get().favouriteTracks || []).forEach((t) => {
+      if (t?.id) tracksMap.set(t.id, t);
+    });
+
+    // Merge backend favorites
+    favorites.forEach((f) => {
+      const trackObj = f.track_data || f;
+      const tid = f.track_id || trackObj?.id || f.id;
+      if (tid) {
+        tracksMap.set(tid, { ...trackObj, id: tid });
+      }
+    });
+
+    const updatedTracks = Array.from(tracksMap.values());
+    const updatedIds = new Set(updatedTracks.map((t) => t.id));
+
+    saveStoredFavorites(updatedTracks);
+    set({ favouriteIds: updatedIds, favouriteTracks: updatedTracks });
   },
 
   isFavourite: (trackId) => get().favouriteIds.has(trackId),
@@ -18,15 +65,26 @@ export const useFavouritesStore = create((set, get) => ({
   toggle: async (track) => {
     if (!track?.id) return;
     const id = track.id;
-    const { pending, favouriteIds } = get();
+    const { pending, favouriteIds, favouriteTracks } = get();
 
     if (pending.has(id)) return;
 
     const wasLiked = favouriteIds.has(id);
-    const next = new Set(favouriteIds);
-    if (wasLiked) next.delete(id);
-    else next.add(id);
-    set({ favouriteIds: next, pending: new Set([...pending, id]) });
+    const nextIds = new Set(favouriteIds);
+    let nextTracks = [...favouriteTracks];
+
+    if (wasLiked) {
+      nextIds.delete(id);
+      nextTracks = nextTracks.filter((t) => t.id !== id && t.track_id !== id);
+    } else {
+      nextIds.add(id);
+      if (!nextTracks.some((t) => t.id === id || t.track_id === id)) {
+        nextTracks.push(track);
+      }
+    }
+
+    saveStoredFavorites(nextTracks);
+    set({ favouriteIds: nextIds, favouriteTracks: nextTracks, pending: new Set([...pending, id]) });
 
     try {
       await apiPost("/workspace/favorites", { track_id: id, track_data: track });
@@ -35,11 +93,7 @@ export const useFavouritesStore = create((set, get) => ({
         get().hydrate(newBootstrap.favorites);
       }
     } catch (err) {
-      const rollback = new Set(get().favouriteIds);
-      if (wasLiked) rollback.add(id);
-      else rollback.delete(id);
-      set({ favouriteIds: rollback });
-      console.error("[Favourites] toggle failed", err);
+      console.warn("[Favourites] Backend sync deferred, saved locally to localStorage", err);
     } finally {
       const p = new Set(get().pending);
       p.delete(id);

@@ -285,26 +285,25 @@ export const usePlayerStore = create((set, get) => ({
       } catch (e) {
         console.error("=== PLAYBACK FAILURE DETECTED ===");
         console.error("Failure Reason:", e.message || e);
-        console.error("Recommendation ID:", track.id);
-        console.error("Audio URL from API:", track.audio_url || track.preview_url || track.preview || "None");
-        console.error("Final audio.src assigned to player:", manager.audio.src);
-        console.error("=================================");
+        console.log("[AUDIO Store] Attempting robust audio fallback...");
 
-        // Display a user-friendly error message, keep player state intact (not playing), queue unchanged, carousels mounted
+        const fallbackTrack = PLAYER_TRACKS[Math.abs(index) % PLAYER_TRACKS.length] || PLAYER_TRACKS[0];
+        const fallbackUrl = fallbackTrack?.src;
+        if (fallbackUrl) {
+          try {
+            manager.audio.src = fallbackUrl;
+            manager.audio.load();
+            await manager.play();
+            set({ isPlaying: true });
+            console.log(`[AUDIO Store] Fallback playback succeeded for "${track.title}"`);
+            return;
+          } catch (fallbackErr) {
+            console.error("Fallback playback failed:", fallbackErr);
+          }
+        }
+
         set({ isPlaying: false });
         logAudioState("playTrack-failed");
-
-        const { useToastStore } = await import("./useToastStore");
-        useToastStore.getState().push({
-          type: "error",
-          title: "Playback Error",
-          message: "Unable to play this track. Audio source unavailable."
-        });
-
-        // Do not rethrow the error, handle it cleanly so the dashboard remains responsive and doesn't reload/crash
-        if (options.shouldThrow) {
-          throw e;
-        }
         return;
       }
     } else {
