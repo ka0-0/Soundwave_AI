@@ -56,16 +56,44 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RequestLoggingMiddleware)
-app.add_middleware(RateLimitMiddleware, limit=60, window=60)
+REQUIRED_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5000",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+    "https://soundwave-ai-ioik.vercel.app",
+    "https://www.soundwave-ai-ioik.vercel.app",
+]
+
+# Preserve system of loading origins from environment variables
+env_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+
+# Include FRONTEND_URL if specified in settings
+if getattr(settings, "FRONTEND_URL", None):
+    frontend_url = settings.FRONTEND_URL.strip().rstrip("/")
+    if frontend_url and frontend_url.startswith("http"):
+        env_origins.append(frontend_url)
+
+# Append required origins and filter out wildcards ('*') since allow_credentials=True
+combined_origins = env_origins + REQUIRED_CORS_ORIGINS
+cors_allowed_origins = []
+for origin in combined_origins:
+    if origin != "*" and origin not in cors_allowed_origins:
+        cors_allowed_origins.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()],
+    allow_origins=cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RateLimitMiddleware, limit=60, window=60)
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["Auth"])
 app.include_router(discover.router, prefix=settings.API_V1_PREFIX)
