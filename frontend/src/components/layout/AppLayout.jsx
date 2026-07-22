@@ -34,6 +34,11 @@ export default function AppLayout({ children }) {
 
   useEffect(() => {
     if (!isMobileDrawerOpen) return;
+
+    // Lock background scrolling
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         setIsMobileDrawerOpen(false);
@@ -42,6 +47,7 @@ export default function AppLayout({ children }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = origOverflow;
     };
   }, [isMobileDrawerOpen]);
 

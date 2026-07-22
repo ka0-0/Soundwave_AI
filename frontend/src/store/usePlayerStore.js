@@ -302,6 +302,9 @@ export const usePlayerStore = create((set, get) => ({
         });
 
         // Do not rethrow the error, handle it cleanly so the dashboard remains responsive and doesn't reload/crash
+        if (options.shouldThrow) {
+          throw e;
+        }
         return;
       }
     } else {

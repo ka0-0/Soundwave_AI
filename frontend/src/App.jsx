@@ -118,7 +118,7 @@ export default function App() {
         console.log("Autoplay attempted");
         try {
           const startIndex = usePlayerStore.getState().currentIndex;
-          await playTrack(startIndex);
+          await playTrack(startIndex, { shouldThrow: true });
           console.log("Autoplay success");
           const manager = getAudioManager();
           const audio = manager ? manager.audio : null;
@@ -136,6 +136,7 @@ export default function App() {
           // Setup interaction fallback
           const playOnInteraction = async () => {
             console.log("[AUDIO] first interaction detected");
+            removeListeners();
             try {
               resumeAnalyserContext();
             } catch (rErr) {
@@ -156,7 +157,6 @@ export default function App() {
                   console.log("[AUDIO] playback started");
                 }
               }
-              removeListeners();
             } catch (e) {
               console.warn("[AMBIENT] Failed to play on interaction", e);
             }
