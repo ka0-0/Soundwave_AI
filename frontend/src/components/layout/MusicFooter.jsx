@@ -11,7 +11,7 @@ export default function MusicFooter() {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Top Equalizer Graphic Strip */}
-      <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center justify-between border-b border-white/5 pb-6 flex-wrap gap-4">
+      <div className="w-full px-6 sm:px-8 mb-8 flex items-center justify-between border-b border-white/5 pb-6 flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <Logo />
           <span className="text-xs font-black uppercase tracking-[0.25em] text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/30">
@@ -38,7 +38,7 @@ export default function MusicFooter() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+      <div className="w-full px-6 sm:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
         {/* Column 1: SoundWave AI Brand Info */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-display text-xl font-black text-white tracking-wide">
@@ -135,7 +135,7 @@ export default function MusicFooter() {
       </div>
 
       {/* Bottom Copyright & Rights Strip */}
-      <div className="max-w-7xl mx-auto px-6 border-t border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500 font-medium">
+      <div className="w-full px-6 sm:px-8 border-t border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500 font-medium">
         <p>
           © 2026 <span className="text-purple-400 font-bold">SoundWave AI</span> — All rights reserved. Crafted with <span className="text-pink-400">♥</span> for acoustic lovers.
         </p>

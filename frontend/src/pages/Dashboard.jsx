@@ -126,12 +126,20 @@ function ElectricNeuralBackground({ accent, accentAlt }) {
       // Ambient dynamic bloom glow in space (pulsates with music beats)
       const glowRadius = 240 + bass * 180;
       const centerGlow = ctx.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, glowRadius);
-      const alphaHex = Math.max(0, Math.min(255, Math.floor(15 + bass * 25))).toString(16).padStart(2, "0");
-      const alphaAltHex = Math.max(0, Math.min(255, Math.floor(8 + mid * 18))).toString(16).padStart(2, "0");
+      const alphaHex = Math.max(0, Math.min(255, Math.floor(25 + bass * 35))).toString(16).padStart(2, "0");
+      const alphaAltHex = Math.max(0, Math.min(255, Math.floor(15 + mid * 25))).toString(16).padStart(2, "0");
       centerGlow.addColorStop(0, `${accent}${alphaHex}`);
       centerGlow.addColorStop(0.5, `${accentAlt}${alphaAltHex}`);
       centerGlow.addColorStop(1, "transparent");
       ctx.fillStyle = centerGlow;
+      ctx.fillRect(0, 0, w, h);
+
+      // Left edge ambient glow (ensures left wall is continuously illuminated with zero dark void)
+      const leftGlow = ctx.createRadialGradient(0, h / 2, 10, 0, h / 2, Math.max(600, w * 0.5));
+      leftGlow.addColorStop(0, `${accent}${alphaHex}`);
+      leftGlow.addColorStop(0.5, `${accentAlt}${alphaAltHex}`);
+      leftGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = leftGlow;
       ctx.fillRect(0, 0, w, h);
 
       // Draw and animate expanding energy ripples
@@ -735,7 +743,7 @@ export default function Dashboard() {
     : queue.filter(t => favouriteIds.has(t.id));
 
   return (
-    <div className="relative min-h-screen pb-28 pt-8 px-4 md:px-12 overflow-x-hidden font-sans">
+    <div className="relative min-h-screen pb-28 pt-4 px-4 sm:px-6 lg:px-8 overflow-x-hidden font-sans">
       {/* Dynamic Neural network Canvas Background */}
       <ElectricNeuralBackground accent={accent} accentAlt={accentAlt} />
 
@@ -756,7 +764,7 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-col gap-10">
+      <div className="relative z-10 w-full flex flex-col gap-10">
         
         {/* HERO SECTION: Apple Keynote side-by-side composition (Height max 75-80vh) */}
         <div className="w-full flex flex-col lg:flex-row justify-between items-center gap-8 lg:min-h-[500px] lg:h-[76vh] relative py-4">

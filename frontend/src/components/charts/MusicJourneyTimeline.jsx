@@ -55,7 +55,7 @@ function Planet({ session, index, x, y, hovered, onHover, isEmpty }) {
         textAnchor="middle"
         fill={isEmpty ? "rgba(161,161,170,0.3)" : "rgba(161,161,170,0.8)"}
         fontSize="7"
-        fontFamily="Inter, sans-serif"
+        fontFamily="'Space Grotesk', sans-serif"
       >
         {DAYS[index]}
       </text>

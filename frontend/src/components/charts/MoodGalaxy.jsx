@@ -60,7 +60,7 @@ function Star({ mood, index, hovered, onHover, isEmpty }) {
           fill={mood.color}
           fontSize="11"
           fontWeight="600"
-          fontFamily="Inter, sans-serif"
+          fontFamily="'Space Grotesk', sans-serif"
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
         >

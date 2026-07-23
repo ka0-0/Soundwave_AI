@@ -80,7 +80,7 @@ function CelestialBody({ artist, x, y, size, color, index, hovered, onHover, isE
             fill="white"
             fontSize="7"
             fontWeight="600"
-            fontFamily="Inter, sans-serif"
+            fontFamily="'Space Grotesk', sans-serif"
           >
             {(artist?.name || "Artist").slice(0, 14)}
           </text>
@@ -89,7 +89,7 @@ function CelestialBody({ artist, x, y, size, color, index, hovered, onHover, isE
             textAnchor="middle"
             fill={color}
             fontSize="6"
-            fontFamily="Inter, sans-serif"
+            fontFamily="'Space Grotesk', sans-serif"
           >
             {artist?.genre || "Unknown genre"}
           </text>
@@ -102,7 +102,7 @@ function CelestialBody({ artist, x, y, size, color, index, hovered, onHover, isE
           textAnchor="middle"
           fill="rgba(161,161,170,0.6)"
           fontSize="6"
-          fontFamily="Inter, sans-serif"
+          fontFamily="'Space Grotesk', sans-serif"
         >
           {artist.name.slice(0, 10)}
         </text>

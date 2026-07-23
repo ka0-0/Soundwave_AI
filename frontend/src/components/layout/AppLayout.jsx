@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Home, Compass, Library, Disc3, User, LogOut, Sparkles, Sun, Moon, Contrast, Menu, X } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -10,39 +10,29 @@ import { apiPostNoBody } from "../../utils/api";
 import Logo from "../ui/Logo";
 import MusicFooter from "./MusicFooter";
 
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "hi", label: "हिन्दी" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "ja", label: "日本語" },
-  { code: "ko", label: "한국어" },
-  { code: "zh", label: "中文" },
-  { code: "ar", label: "العربية" },
-];
-
 export default function AppLayout({ children }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isOffline = useAuthStore((s) => s.isOffline);
-  const { theme, setTheme, highContrast, setHighContrast, language, setLanguage, saveToServer } = usePreferencesStore();
+  const { theme, setTheme, highContrast, setHighContrast, saveToServer } = usePreferencesStore();
 
   useEffect(() => {
-    if (!isMobileDrawerOpen) return;
+    // Close mobile menu on route change
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
-    // Lock background scrolling
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
     const origOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        setIsMobileDrawerOpen(false);
+        setIsMobileMenuOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -50,9 +40,10 @@ export default function AppLayout({ children }) {
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = origOverflow;
     };
-  }, [isMobileDrawerOpen]);
+  }, [isMobileMenuOpen]);
 
   const links = [
+    { to: "/", label: "Experience", icon: Sparkles },
     { to: "/dashboard", label: t("common.dashboard"), icon: Home },
     { to: "/discover", label: t("common.discover"), icon: Compass },
     { to: "/library", label: t("common.library"), icon: Library },
@@ -84,160 +75,159 @@ export default function AppLayout({ children }) {
     if (isAuthenticated) saveToServer().catch(() => {});
   }
 
-  async function handleLanguageChange(code) {
-    setLanguage(code);
-    if (isAuthenticated) {
-      try {
-        await saveToServer();
-      } catch {
-        // Local preference still applied.
-      }
-    }
-  }
-
   const ThemeIcon = highContrast ? Contrast : theme === "light" ? Sun : Moon;
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen flex flex-col bg-[#07051A] text-white">
+      {/* Background Mesh Gradient */}
       <div className="mesh-bg pointer-events-none" aria-hidden>
-        <div className="mesh-orb mesh-orb-1 opacity-30" />
-        <div className="mesh-orb mesh-orb-2 opacity-25" />
+        <div className="mesh-orb mesh-orb-1 opacity-50" />
+        <div className="mesh-orb mesh-orb-2 opacity-35" />
+        <div className="absolute top-0 left-0 w-[650px] h-[650px] bg-gradient-to-br from-purple-700/35 via-indigo-600/20 to-transparent blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[550px] h-[550px] bg-gradient-to-tr from-pink-600/25 via-purple-600/15 to-transparent blur-[140px] pointer-events-none" />
       </div>
 
-      {/* Visual cue for the hidden sidebar */}
-      {!isSidebarOpen && (
-        <div className="hidden lg:block fixed left-0 top-0 z-20 h-screen w-[2px] bg-gradient-to-b from-purple-500/20 via-pink-500/20 to-blue-500/20 opacity-30 shadow-[0_0_10px_rgba(168,85,247,0.3)] pointer-events-none" />
-      )}
-
-      {/* Mobile Drawer Backdrop */}
-      {isMobileDrawerOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
-          onClick={() => setIsMobileDrawerOpen(false)}
-        />
-      )}
-
-      {/* Mobile Drawer Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-64 bg-[#0A0518]/95 border-r border-gold/10 p-4 transition-transform duration-300 ease-out transform lg:hidden flex flex-col ${
-          isMobileDrawerOpen ? "translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "-translate-x-full border-r-transparent shadow-none"
-        }`}
-        role="navigation"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <Link to="/dashboard" className="flex items-center gap-2" onClick={() => setIsMobileDrawerOpen(false)}>
-            <Logo className="h-10" />
+      {/* Top Navigation Bar */}
+      <header className="app-navbar sticky top-0 z-50 w-full border-b border-gold/10 transition-all duration-300">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+          {/* Brand Logo & Title */}
+          <Link to="/dashboard" className="flex items-center gap-3 group focus:outline-none shrink-0">
+            <Logo className="h-9 transition-transform duration-300 group-hover:scale-105" />
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-extrabold tracking-wider bg-gradient-to-r from-white via-purple-200 to-gold bg-clip-text text-transparent">
+                SOUNDWAVE AI
+              </span>
+              <span className="text-[9px] text-muted tracking-[0.22em] font-semibold uppercase">
+                Neural AI Intelligence
+              </span>
+            </div>
           </Link>
-          <button
-            type="button"
-            className="p-2 text-muted hover:text-white transition-colors focus:outline-none"
-            style={{ width: 44, height: 44 }}
-            onClick={() => setIsMobileDrawerOpen(false)}
-            aria-label="Close menu"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <p className="text-[10px] text-muted uppercase tracking-[0.2em]">Neural AI Intelligence</p>
 
-        <nav className="mt-8 flex flex-1 flex-col gap-1.5">
-          <Link to="/" className={`nav-item rounded-xl transition-all duration-300 ${location.pathname === "/" ? "nav-item-active gold-border shadow-glow text-gold bg-gold/10" : "hover:bg-gold/5"}`} onClick={() => setIsMobileDrawerOpen(false)}>
-            <Sparkles size={18} className={location.pathname === "/" ? "text-gold" : ""} />
-            Experience
-          </Link>
-          {links.map((item) => {
-            const Icon = item.icon;
-            const active = location.pathname === item.to;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`nav-item rounded-xl transition-all duration-300 ${active ? "nav-item-active gold-border shadow-glow text-gold bg-gold/10" : "hover:bg-gold/5"}`}
-                onClick={() => setIsMobileDrawerOpen(false)}
-              >
-                <Icon size={18} className={active ? "text-gold" : ""} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {isAuthenticated && (
-          <button
-            type="button"
-            onClick={() => {
-              setIsMobileDrawerOpen(false);
-              handleLogout();
-            }}
-            className="nav-item w-full text-left text-muted hover:text-pink transition-colors mt-auto"
-            style={{ minHeight: '44px' }}
-          >
-            <LogOut size={18} />
-            {t("common.logout")}
-          </button>
-        )}
-      </aside>
-
-      {/* Hidden Hover Trigger Container (Desktop Only) */}
-      <div
-        className="hidden lg:block fixed left-0 top-0 z-30 h-screen transition-all duration-300"
-        style={{ width: isSidebarOpen ? "224px" : "16px" }}
-        onMouseEnter={() => setIsSidebarOpen(true)}
-        onMouseLeave={() => setIsSidebarOpen(false)}
-      >
-        <aside
-          className={`app-sidebar glass-premium flex h-full w-52 sm:w-56 flex-col border-r border-gold/10 p-4 transition-transform duration-300 ease-out ${
-            isSidebarOpen
-              ? "translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.8)]"
-              : "-translate-x-full border-r-transparent shadow-none"
-          }`}
-          role="navigation"
-        >
-          <Link to="/dashboard" className="flex items-center gap-2 mb-2">
-            <Logo className="h-10" />
-          </Link>
-          <p className="mt-1 text-[10px] text-muted sm:text-xs uppercase tracking-[0.2em]">Neural AI Intelligence</p>
-
-          <nav className="mt-8 flex flex-1 flex-col gap-1.5">
-            <Link to="/" className={`nav-item rounded-xl transition-all duration-300 ${location.pathname === "/" ? "nav-item-active gold-border shadow-glow text-gold bg-gold/10" : "hover:bg-gold/5"}`}>
-              <Sparkles size={18} className={location.pathname === "/" ? "text-gold" : ""} />
-              Experience
-            </Link>
-            {links.map((item, index) => {
+          {/* Desktop Center Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+            {links.map((item) => {
               const Icon = item.icon;
               const active = location.pathname === item.to;
               return (
-                <motion.div key={item.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.03 }}>
-                  <Link to={item.to} className={`nav-item rounded-xl transition-all duration-300 ${active ? "nav-item-active gold-border shadow-glow text-gold bg-gold/10" : "hover:bg-gold/5"}`}>
-                    <Icon size={18} className={active ? "text-gold" : ""} />
-                    {item.label}
-                  </Link>
-                </motion.div>
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`relative flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
+                    active
+                      ? "text-gold bg-gold/10 border border-gold/40 shadow-[0_0_15px_rgba(234,179,8,0.25)]"
+                      : "text-muted hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Icon size={16} className={active ? "text-gold" : "opacity-70 group-hover:opacity-100"} />
+                  <span>{item.label}</span>
+                  {active && (
+                    <motion.div
+                      layoutId="activeTabGlow"
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-gold/15 to-pink-500/20 pointer-events-none"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </Link>
               );
             })}
           </nav>
 
-          {isAuthenticated && (
-            <button type="button" onClick={handleLogout} className="nav-item w-full text-left text-muted hover:text-pink">
-              <LogOut size={18} />
-              {t("common.logout")}
+          {/* Right Action Tools & Logout */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={cycleTheme}
+              className="p-2 rounded-full text-muted hover:text-white hover:bg-white/10 transition-colors focus:outline-none"
+              title="Toggle Theme"
+              aria-label="Toggle Theme"
+            >
+              <ThemeIcon size={17} />
             </button>
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden sm:flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full border border-pink-500/30 text-pink-300 hover:text-white hover:bg-pink-500/20 hover:border-pink-500/60 shadow-sm transition-all duration-300 focus:outline-none"
+              >
+                <LogOut size={15} />
+                <span>{t("common.logout")}</span>
+              </button>
+            )}
+
+            {/* Mobile Hamburger Menu Button */}
+            <button
+              type="button"
+              className="md:hidden flex items-center justify-center p-2.5 rounded-full bg-white/[0.06] border border-white/10 text-white focus:outline-none"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Navigation Menu"
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Dropdown */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="md:hidden border-t border-white/10 bg-[#0A0518]/95 backdrop-blur-2xl overflow-hidden"
+            >
+              <div className="p-4 space-y-1.5">
+                {links.map((item) => {
+                  const Icon = item.icon;
+                  const active = location.pathname === item.to;
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                        active
+                          ? "bg-gold/15 text-gold border border-gold/30 font-semibold"
+                          : "text-muted hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      <Icon size={18} className={active ? "text-gold" : "text-muted"} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+
+                {isAuthenticated && (
+                  <div className="pt-3 mt-2 border-t border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-pink-400 hover:bg-pink-500/10 transition-colors"
+                    >
+                      <LogOut size={18} />
+                      <span>{t("common.logout")}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
-        </aside>
-      </div>
+        </AnimatePresence>
 
-      <div className="app-content relative z-10 ml-0 min-h-screen transition-all duration-300 flex flex-col justify-between">
-        {/* Floating Mobile Menu Button */}
-        <button
-          type="button"
-          className="lg:hidden fixed top-4 left-4 z-40 flex items-center justify-center p-2.5 rounded-full bg-black/70 border border-purple-500/30 text-white backdrop-blur-md shadow-xl"
-          onClick={() => setIsMobileDrawerOpen(true)}
-          aria-label="Open menu"
-        >
-          <Menu size={18} />
-        </button>
+        {/* Sleek Gradient Accent Line under Navbar */}
+        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-purple-500/40 via-pink-500/40 to-transparent" />
+      </header>
 
-        <main className="app-main min-w-0 p-4 md:p-6 flex-1">{children}</main>
+      {/* Main Page Content */}
+      <div className="app-content relative z-10 flex-1 flex flex-col justify-between">
+        <main className="app-main min-w-0 flex-1 w-full">
+          {children}
+        </main>
         <MusicFooter />
       </div>
     </div>

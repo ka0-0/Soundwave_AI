@@ -442,7 +442,7 @@ export default function Library() {
         .animate-lib-bar-3 { animation: libraryEqBar3 0.45s ease-in-out infinite; }
       `}</style>
 
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-col gap-10">
+      <div className="relative z-10 w-full flex flex-col gap-10">
         
         {/* HEADER DECK */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-2 border-b border-white/5">

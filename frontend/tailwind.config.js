@@ -18,9 +18,9 @@ export default {
         muted: "var(--text-muted)"
       },
       fontFamily: {
-        display: ["Rowdies", "sans-serif"],
-        body: ["Rowdies", "sans-serif"],
-        sans: ["Rowdies", "sans-serif"],
+        display: ["Space Grotesk", "sans-serif"],
+        body: ["Space Grotesk", "sans-serif"],
+        sans: ["Space Grotesk", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"]
       },
       borderRadius: {
